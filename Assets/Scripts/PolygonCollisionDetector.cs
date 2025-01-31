@@ -110,6 +110,7 @@ public class PolygonCollisionDetector : MonoBehaviour
         public List<Vector2> contactPointsOnA = new List<Vector2>();
         public List<Vector2> contactPointsOnB = new List<Vector2>();
         public bool hasCollision;
+        // TODO. 检查contactPointA -> contactB距离是否和穿透距离相同？
     }
 
     public class Plane2D
@@ -253,8 +254,8 @@ public class PolygonCollisionDetector : MonoBehaviour
         // 只保留在Reference Face的背面的点
         Vector2 refFaceNormal = GetFaceNormal(refPoly, refFaceIndex);
         Vector2 refFacePoint = refPoly[refFaceIndex];
-        Plane2D refFacePlane = new Plane2D(refFaceNormal,
-            Vector2.Dot(refFaceNormal, refFacePoint));
+        // Plane2D refFacePlane = new Plane2D(refFaceNormal,
+        //     Vector2.Dot(refFaceNormal, refFacePoint));
 
         // clippedPoints = ClipPoints(clippedPoints, refFacePlane);
 
@@ -410,56 +411,60 @@ public class PolygonCollisionDetector : MonoBehaviour
         return center / shape.Count;
     }
 
-    public void CheckCollisions(List<List<Vector2>> shapes)
-    {
-        int collision_count = 0;
-        for (int i = 0; i < shapes.Count; i++)
-        {
-            for (int j = i + 1; j < shapes.Count; j++)
-            {
-                CollisionManifold manifold = CheckCollision(shapes[i], shapes[j]);
-                if (manifold.hasCollision)
-                {
-                    collision_count++;
-                    // Handle collision response here
-                    // Debug.Log($"Collision between shape {i} and {j}");
-                    // Debug.Log($"Number of contact points: {manifold.contactPoints.Count}");
-                    // Debug.Log($"Penetration depth: {manifold.penetration}");
-                }
-            }
-        }
-        // if(collision_count == 0)
-        // {
-        //     Debug.Log("No collision detected");
-        // }
-    }
-
     public List<PolyShape> polyShapes;
     void Awake()
     {
         polyShapes = GetComponent<EnvironGenerator>().polyShapes;
     }
 
-    [Button("Check Collisions")]
-    void CheckCollisions()
+    List<Vector2> TransformPolygon(PolyShape poly)
     {
-        var shapes = new List<List<Vector2>>();
-        foreach (var shape in polyShapes)
+        var shape = new List<Vector2>();
+        foreach (var vertice in poly.Vertices)
         {
-            var global_point = new List<Vector2>();
-
-            foreach (var poly in shape.Vertices)
-            {
-                global_point.Add(shape.transform.TransformPoint(poly));
-            }
-            global_point.Reverse();
-            shapes.Add(global_point);
+            shape.Add(poly.transform.TransformPoint(vertice));
         }
-        CheckCollisions(shapes);
+        shape.Reverse();
+        return shape;
     }
 
-    private void Update()
+
+    [Button("Check Collisions")]
+    public List<CollisionConstraint> CheckCollisions()
     {
-        CheckCollisions();
+        List<CollisionConstraint> constraints = new List<CollisionConstraint>();
+        //坐标变换
+
+        for (int i = 0; i < polyShapes.Count; i++)
+        {
+            var shape_i = TransformPolygon(polyShapes[i]);
+            for (int j = i + 1; j < polyShapes.Count; j++)
+            {
+                var shape_j = TransformPolygon(polyShapes[j]);
+
+                CollisionManifold manifold = CheckCollision(shape_i, shape_j);
+                if (manifold.hasCollision)
+                {
+                    for(int k = 0; k < manifold.contactPointsOnA.Count; k++)
+                    {
+                        var constraint = new CollisionConstraint
+                        {
+                            eA = polyShapes[i].Entry,
+                            eB = polyShapes[j].Entry,
+                            pointA_world = manifold.contactPointsOnA[k],
+                            pointB_world = manifold.contactPointsOnB[k],
+                            pointA_local = polyShapes[i].transform.InverseTransformPoint(manifold.contactPointsOnA[k]),
+                            pointB_local = polyShapes[j].transform.InverseTransformPoint(manifold.contactPointsOnB[k]),
+                            normal = manifold.normal,
+                            lambda_n = 0,
+                            lambda_t = 0,
+                        };
+                        constraints.Add(constraint);
+                    }
+                }
+            }
+        }
+        return constraints;
     }
+
 }

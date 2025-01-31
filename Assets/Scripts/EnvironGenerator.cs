@@ -25,21 +25,6 @@ public class EnvironGenerator : MonoBehaviour
         {
             GeneratePolygon();
         }
-        polyShapes[0].Vertices = new List<Vector2> {
-            new Vector2(-0.38f,-3.11f),
-            new Vector2(2.66f,-0.30522f),
-            new Vector2(0.35004f,2.65f),
-            new Vector2(-3.07f,1.52244f),
-            new Vector2(-3.99f,-2.61f),
-        };
-
-        polyShapes[1].Vertices = new List<Vector2> {
-            new Vector2(0.6996f,-1.4672f),
-            new Vector2(1.9455f,0.2889f),
-            new Vector2(1.4964f,1.38144f),
-            new Vector2(-1.099627f,0.8420076f),
-            new Vector2(-1.515298f,0.7301468f),
-        };
     }
 
     void Start()
