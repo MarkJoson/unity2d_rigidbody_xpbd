@@ -133,14 +133,14 @@ public class PolygonCollisionDetector : MonoBehaviour
             penetration = float.MaxValue
         };
 
-        int numVertices = shapeA.Count+shapeB.Count;
+        int numVertices = shapeA.Count + shapeB.Count;
 
         text.text = "No Collision!!";
 
         // Check all axes of shape A
         for (int i = 0; i < numVertices; i++)
         {
-            Vector2 axis =  i < shapeA.Count ? GetFaceNormal(shapeA, i) : GetFaceNormal(shapeB, i-shapeA.Count);
+            Vector2 axis = i < shapeA.Count ? GetFaceNormal(shapeA, i) : GetFaceNormal(shapeB, i - shapeA.Count);
 
             float[] projectionA = ProjectShape(shapeA, axis);
             float[] projectionB = ProjectShape(shapeB, axis);
@@ -156,9 +156,9 @@ public class PolygonCollisionDetector : MonoBehaviour
             float overlap = Mathf.Min(projectionA[1], projectionB[1]) - Mathf.Max(projectionA[0], projectionB[0]);
 
             // 处理包围的情况，如果两个物体嵌套，则记录一下边界的最近距离
-            if((projectionA[1]-projectionB[1])*(projectionA[0]-projectionB[0]) < 0)
+            if ((projectionA[1] - projectionB[1]) * (projectionA[0] - projectionB[0]) < 0)
             {
-                overlap = 1000 + Mathf.Min(Mathf.Abs(projectionA[1]-projectionB[1]), Mathf.Abs(projectionA[0]-projectionB[0]));
+                overlap = 1000 + Mathf.Min(Mathf.Abs(projectionA[1] - projectionB[1]), Mathf.Abs(projectionA[0] - projectionB[0]));
             }
             // 选择最小的分离距离
             if (overlap < result.penetration)
@@ -180,7 +180,7 @@ public class PolygonCollisionDetector : MonoBehaviour
             result.normal = -result.normal;
         }
 
-        if(result.penetration > 100)
+        if (result.penetration > 100)
         {
             result.penetration -= 1000;
             // Debug.Log("Containing!!!!!");
@@ -191,7 +191,7 @@ public class PolygonCollisionDetector : MonoBehaviour
             text.text = "Collide Happened!!";
         }
 
-        if(result.penetration < 0)
+        if (result.penetration < 0)
         {
             result.hasCollision = false;
             return result;
@@ -281,9 +281,9 @@ public class PolygonCollisionDetector : MonoBehaviour
 
 
         // Debug可视化
-        var mid_point = 0.5f*(refPoly[refFaceIndex]+refPoly[(refFaceIndex+1)%refPoly.Count]);
+        var mid_point = 0.5f * (refPoly[refFaceIndex] + refPoly[(refFaceIndex + 1) % refPoly.Count]);
         DebugDrawArrow(mid_point, mid_point + refNormal * normalLength, NORMAL_COLOR);
-        mid_point = 0.5f*(incidentFace[0]+incidentFace[1]);
+        mid_point = 0.5f * (incidentFace[0] + incidentFace[1]);
         DebugDrawArrow(mid_point, mid_point + incNormal * normalLength, NORMAL_COLOR);
 
         Vector2 start = refPoly[refFaceIndex];
@@ -297,11 +297,11 @@ public class PolygonCollisionDetector : MonoBehaviour
             end = start + plane.normal * 10;
             DebugDrawLine(start, end, CLIPPING_PLANE_COLOR);
         }
-        foreach(var pt in manifold.contactPointsOnA)
+        foreach (var pt in manifold.contactPointsOnA)
         {
             DebugDrawPoint(pt, CONTACTA_POINT_COLOR, pointSize);
         }
-        foreach(var pt in manifold.contactPointsOnB)
+        foreach (var pt in manifold.contactPointsOnB)
         {
             DebugDrawPoint(pt, CONTACTB_POINT_COLOR, pointSize);
         }
@@ -323,7 +323,7 @@ public class PolygonCollisionDetector : MonoBehaviour
 
             if (d1 <= 0) result.Add(p1);
             // else
-            if (d1<=0 && d1 * d2 < 0)
+            if (d1 <= 0 && d1 * d2 < 0)
             {
                 float t = d1 / (d1 - d2);
                 Vector2 intersection = p1 + t * (p2 - p1);
@@ -411,13 +411,13 @@ public class PolygonCollisionDetector : MonoBehaviour
         return center / shape.Count;
     }
 
-    public List<PolyShape> polyShapes;
+    public List<PolygonRBEntry> polyShapes;
     void Awake()
     {
         polyShapes = GetComponent<EnvironGenerator>().polyShapes;
     }
 
-    List<Vector2> TransformPolygon(PolyShape poly)
+    List<Vector2> TransformPolygon(PolygonRBEntry poly)
     {
         var shape = new List<Vector2>();
         foreach (var vertice in poly.Vertices)
@@ -445,20 +445,14 @@ public class PolygonCollisionDetector : MonoBehaviour
                 CollisionManifold manifold = CheckCollision(shape_i, shape_j);
                 if (manifold.hasCollision)
                 {
-                    for(int k = 0; k < manifold.contactPointsOnA.Count; k++)
+                    for (int k = 0; k < manifold.contactPointsOnA.Count; k++)
                     {
-                        var constraint = new CollisionConstraint
-                        {
-                            eA = polyShapes[i].Entry,
-                            eB = polyShapes[j].Entry,
-                            pointA_world = manifold.contactPointsOnA[k],
-                            pointB_world = manifold.contactPointsOnB[k],
-                            pointA_local = polyShapes[i].transform.InverseTransformPoint(manifold.contactPointsOnA[k]),
-                            pointB_local = polyShapes[j].transform.InverseTransformPoint(manifold.contactPointsOnB[k]),
-                            normal = manifold.normal,
-                            lambda_n = 0,
-                            lambda_t = 0,
-                        };
+                        var constraint = new CollisionConstraint(
+                            pAw: manifold.contactPointsOnA[k],
+                            pBw: manifold.contactPointsOnB[k],
+                            n: manifold.normal,
+                            eA: polyShapes[i],
+                            eB: polyShapes[j]);
                         constraints.Add(constraint);
                     }
                 }

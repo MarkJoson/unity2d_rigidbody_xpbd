@@ -7,7 +7,7 @@ using UnityEngine.UIElements;
 
 public class CollideCheck : MonoBehaviour
 {
-    public List<PolyShape> polyShapes;
+    public List<PolygonRBEntry> polyShapes;
 
     public List<int> collidingIndices;
     public List<Vector2> intersections;

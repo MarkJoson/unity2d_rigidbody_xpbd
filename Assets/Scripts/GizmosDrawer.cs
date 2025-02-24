@@ -7,7 +7,7 @@ public class GizmosDrawer : MonoBehaviour
 
     void OnDrawGizmos()
     {
-        polyVerts = GetComponent<PolyShape>().Vertices;
+        polyVerts = GetComponent<PolygonRBEntry>().Vertices;
 
         Gizmos.color = Color.red;
         // draw AABB

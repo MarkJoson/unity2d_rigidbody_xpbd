@@ -70,7 +70,7 @@ public class ParallelCollisionDetector : MonoBehaviour
         );
     }
 
-    public List<PolyShape> shapes = new List<PolyShape>();
+    public List<PolygonRBEntry> shapes = new List<PolygonRBEntry>();
 
     void Awake()
     {
@@ -103,8 +103,8 @@ public class ParallelCollisionDetector : MonoBehaviour
 
     void CheckCollisionPair(int s_i, int s_j)
     {
-        PolyShape shape1 = shapes[s_i];
-        PolyShape shape2 = shapes[s_j];
+        PolygonRBEntry shape1 = shapes[s_i];
+        PolygonRBEntry shape2 = shapes[s_j];
 
         // TODO. AABB过滤
 
