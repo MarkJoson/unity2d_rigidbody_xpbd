@@ -203,7 +203,7 @@ public class PositionBasedDynamics : MonoBehaviour
         c.eB.transform.Rotate(0,0,dthetaB * Mathf.Rad2Deg);
     }
 
-    public PolygonCollisionDetector pcd;
+    public PolygonCollisionDetector collisionDetector;
     public List<RigidBodyEntry> entries = new List<RigidBodyEntry>();
     public List<PositionConstraint> posConstraints;
     public List<AngularConstraint> angularConstraints;
@@ -256,7 +256,7 @@ public class PositionBasedDynamics : MonoBehaviour
 
     void Awake()
     {
-        pcd = GetComponent<PolygonCollisionDetector>();
+        collisionDetector = GetComponent<PolygonCollisionDetector>();
         posConstraints = new List<PositionConstraint>();
         angularConstraints = new List<AngularConstraint>();
     }
@@ -301,15 +301,6 @@ public class PositionBasedDynamics : MonoBehaviour
         AddAllEntriesInScene();
         AddAllConstraintInScene();
     }
-
-    // Update is called once per frame
-    public Text timeText;
-
-    void Update()
-    {
-        timeText.text = $"Time: {Time.time}";
-    }
-
 
     void FixedUpdate()
     {

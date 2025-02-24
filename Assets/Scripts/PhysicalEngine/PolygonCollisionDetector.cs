@@ -22,7 +22,7 @@ public class PolygonCollisionDetector : MonoBehaviour
     public float arrowSize = 0.1f;
     public float duration = 0.1f;
 
-    public Text text;
+    // public Text text;
 
     private void DebugDrawLine(Vector2 start, Vector2 end, Color color)
     {
@@ -135,7 +135,7 @@ public class PolygonCollisionDetector : MonoBehaviour
 
         int numVertices = shapeA.Count + shapeB.Count;
 
-        text.text = "No Collision!!";
+        // text.text = "No Collision!!";
 
         // Check all axes of shape A
         for (int i = 0; i < numVertices; i++)
@@ -184,11 +184,11 @@ public class PolygonCollisionDetector : MonoBehaviour
         {
             result.penetration -= 1000;
             // Debug.Log("Containing!!!!!");
-            text.text = $"A(B) Containing B(A)!{result.penetration}";
+            // text.text = $"A(B) Containing B(A)!{result.penetration}";
         }
         else
         {
-            text.text = "Collide Happened!!";
+            // text.text = "Collide Happened!!";
         }
 
         if (result.penetration < 0)
