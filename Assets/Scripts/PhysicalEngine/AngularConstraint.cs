@@ -1,19 +1,16 @@
 using UnityEngine;
 
 
-public class AngularConstraint : BaseConstraint{
+public class PBDAngularConstraint : BaseConstraint{
     public float theta;         // Enforced difference in Relative angle
     static public float alpha = 5e-6f;
 
     void Awake()
     {
-        eA = GetComponent<RigidBodyEntry>();
-        eB = GetComponent<RigidBodyEntry>();
-
-        if (eA == null || eB == null)
+        if (eA == null)
         {
-            Debug.LogError("PositionConstraint: RigidBodyEntry not found");
-            throw new System.Exception("PositionConstraint: RigidBodyEntry not found");
+            Debug.LogError("AngularConstraint: RigidBodyEntry not found");
+            throw new System.Exception("AngularConstraint: RigidBodyEntry not found");
         }
     }
 

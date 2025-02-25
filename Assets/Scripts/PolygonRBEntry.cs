@@ -16,8 +16,15 @@ public class PolygonRBEntry : RigidBodyEntry
         set
         {
             vertices = value;
+            Calcinertia(vertices);
+
+            for(int i = 0; i < vertices.Count; i++)
+            {
+                vertices[i] -= centroid;
+            }
+            transform.position += (Vector3)centroid;
+
             UpdateVisualMesh();
-            CalcInteria(vertices);
         }
     }
     public Mesh mesh;
@@ -64,7 +71,8 @@ public class PolygonRBEntry : RigidBodyEntry
         // 使用默认材质或确保材质正确设置
         if (renderer.sharedMaterial == null)
         {
-            renderer.material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            // renderer.material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            renderer.material = renderer.sharedMaterial;
             var random = new Color(Random.value, Random.value, Random.value, 1.0f);
             renderer.material.color = random; // 设置一个可见的颜色
         }
