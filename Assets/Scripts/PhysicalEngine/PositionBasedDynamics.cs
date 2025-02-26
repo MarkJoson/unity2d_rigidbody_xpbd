@@ -30,8 +30,9 @@ public class PositionBasedDynamics : MonoBehaviour
 
         // 计算穿透深度
         float d = Vector2.Dot(pAw - pBw, c.normal);
+        c.valid = d > 0;
 
-        if(d <= 0) {
+        if(!c.valid) {
             // Debug.LogWarning("Collision detected but no penetration");
             return ;
         }
@@ -179,6 +180,10 @@ public class PositionBasedDynamics : MonoBehaviour
             RigidBodyEntry ea = c.eA;
             RigidBodyEntry eb = c.eB;
 
+            if(!c.valid) {
+                Debug.LogWarning("Collision ignored.");
+            }
+
             var vpA = ea.state.GetVelocityAtPoint(c.pointA_local);
             var vpB = eb.state.GetVelocityAtPoint(c.pointB_local);
 
@@ -199,7 +204,10 @@ public class PositionBasedDynamics : MonoBehaviour
             var vpA_old = ea.prev_state.GetVelocityAtPoint(c.pointA_local);
             var vpB_old = eb.prev_state.GetVelocityAtPoint(c.pointB_local);
             var v_rel_n_old = Vector2.Dot(vpA_old - vpB_old, c.normal);
-            var resistance = 1f * (c.eA.resistance + c.eB.resistance);
+            var resistance = 0.5f * (c.eA.resistance + c.eB.resistance);
+            if (Mathf.Abs(v_rel_n) < 2*9.81*h) {
+                resistance = 0;                         // 当|vel_n|<2g*h时，不应用恢复力，避免抖动
+            }
             delta_v += c.normal * (-v_rel_n +  Math.Min(0, -v_rel_n_old * resistance));
             var dvnorm = delta_v.normalized;
 
@@ -224,6 +232,8 @@ public class PositionBasedDynamics : MonoBehaviour
 
     public void PhysicsUpdate(float dt)
     {
+
+
         // substeps
         float h = dt / numSubSteps;
         for(int i = 0; i < numSubSteps; i++)

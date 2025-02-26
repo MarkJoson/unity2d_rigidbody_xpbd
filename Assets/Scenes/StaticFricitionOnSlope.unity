@@ -3548,7 +3548,7 @@ MonoBehaviour:
   posConstraints: []
   angularConstraints: []
   fixedPosConstraints: []
-  numSubSteps: 5
+  numSubSteps: 10
   numPositionIterations: 1
   collisionEnabled: 1
 --- !u!114 &2136267020

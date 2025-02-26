@@ -8,6 +8,8 @@ public class CollisionConstraint{
     public Vector2 normal;      // 碰撞法线
     public float lambda_n;      // 法向碰撞
     public float lambda_t;      // 切向摩擦
+
+    public bool valid = true;   // 是否有效, 会在posSolve的时候检测穿透距离，如果穿透距离<0，就会设置为无效
     static public float alpha = 0f;       // 碰撞刚度
 
     public CollisionConstraint(Vector2 pAw, Vector2 pBw, Vector2 n, RigidBodyEntry eA, RigidBodyEntry eB)
