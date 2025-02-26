@@ -26,6 +26,13 @@ public struct RigidBodyState {
         rot_rad = entry.transform.rotation.eulerAngles.z * Mathf.Deg2Rad;
     }
 
+    public Vector2 GetVecCentroid2Point(Vector2 pt_local)
+    {
+        var r = pt_local;
+        return new Vector2(r.x * Mathf.Cos(rot_rad) - r.y * Mathf.Sin(rot_rad),
+            r.x * Mathf.Sin(rot_rad) + r.y * Mathf.Cos(rot_rad));
+    }
+
     public Vector2 GetVelocityAtPoint(Vector2 pt_local)
     {
         var r = GetVecCentroid2Point(pt_local);
@@ -34,16 +41,7 @@ public struct RigidBodyState {
 
     public Vector2 GetPositionAtPoint(Vector2 pt_local)
     {
-        var r = pt_local;
-        return pos + new Vector2(r.x * Mathf.Cos(rot_rad) - r.y * Mathf.Sin(rot_rad),
-            r.x * Mathf.Sin(rot_rad) + r.y * Mathf.Cos(rot_rad));
-    }
-
-    public Vector2 GetVecCentroid2Point(Vector2 pt_local)
-    {
-        var r = pt_local;
-        return new Vector2(r.x * Mathf.Cos(rot_rad) - r.y * Mathf.Sin(rot_rad),
-            r.x * Mathf.Sin(rot_rad) + r.y * Mathf.Cos(rot_rad));
+        return pos + GetVecCentroid2Point(pt_local);
     }
 }
 
@@ -67,14 +65,14 @@ public class RigidBodyEntry : MonoBehaviour{
         set => state.angular_vel_rad = value;
     }
     public Vector2 Pos {
-        get => state.pos;
+        get => transform.position;
         set {
             state.pos = value;
             transform.position = new Vector3(value.x, value.y, transform.position.z);
         }
     }
     public float RotRad {
-        get => state.rot_rad;
+        get => transform.rotation.eulerAngles.z * Mathf.Deg2Rad;//state.rot_rad;
         set {
             state.rot_rad = value;
             transform.rotation = Quaternion.Euler(0, 0, value * Mathf.Rad2Deg);
@@ -87,13 +85,18 @@ public class RigidBodyEntry : MonoBehaviour{
     }
 
 
-    [ReadOnly]
-    public float inertia_inv;
-    [ReadOnly]
-    public float mass_inv;
-    public float resistance = 0.5f;
-    public float fric_coeff = 0.1f;
-    public float intensity_inv = 1.0f;
+    [SerializeField]
+    float inertia_inv;
+    [SerializeField]
+    float mass_inv;
+
+    public float InertiaInv => is_static ? 0 : inertia_inv;
+    public float MassInv => is_static ? 0 : mass_inv;
+
+    // 物理模拟参数
+    public float resistance = 0.5f;     // 恢复系数
+    public float fric_coeff = 0.1f;     // 摩擦系数
+    public float intensity_inv = 1.0f;  // 密度倒数
     public bool is_static = false;
 
     public Vector2 centroid;
@@ -165,5 +168,10 @@ public class RigidBodyEntry : MonoBehaviour{
         // 计算质量和转动惯量的倒数（用于物理模拟）
         mass_inv = intensity_inv * 1.0f / mass;
         inertia_inv = intensity_inv * 1.0f / inertia;
+    }
+
+    public EffectiveMassElement GetEffectiveMass(Vector2 c2p_world, Vector2 dir_n)
+    {
+        return new EffectiveMassElement(c2p_world, dir_n, MassInv, InertiaInv);
     }
 }

@@ -6,7 +6,9 @@ using UnityEngine;
 /// </summary>
 public struct EffectiveMassElement {
     public float rcn;               // Cross product of r × p (relative position cross position)
-    public float inertia_inv;      // Contribution of inverse interaia at this point
+    // public float inertia_inv;      // Contribution of inverse interaia at this point
+    public float mass_inv;
+    public float inert_inv_rcn;
     public float w;                 // Generalized inverse mass (effective mass)
 
     static float Cross(Vector2 v1, Vector2 v2)
@@ -18,12 +20,8 @@ public struct EffectiveMassElement {
     public EffectiveMassElement(Vector2 c2p_world, Vector2 dir_n, float interaia_inv, float mass_inv)
     {
         rcn = Cross(c2p_world, dir_n);
-        this.inertia_inv = rcn * interaia_inv * rcn;
-        w = this.inertia_inv + mass_inv;
+        this.mass_inv = mass_inv;
+        inert_inv_rcn = interaia_inv * rcn;     // inertia_inv = rcn * interaia_inv * rcn;
+        w = mass_inv + rcn * inert_inv_rcn;
     }
-
-    // public EffectiveMassElement(
-    //     Vector2 pt_world, Vector2 rb_world, Vector2 dir_n, float interaia_inv, float mass_inv)
-    //         : this((pt_world - rb_world), dir_n, interaia_inv, mass_inv)
-    //     {}
 }

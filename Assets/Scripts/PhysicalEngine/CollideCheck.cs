@@ -29,7 +29,8 @@ public class CollideCheck : MonoBehaviour
             for (int j = i + 1; j < polyShapes.Count; j++)
             {
                 List<Collider2D> colliders = new List<Collider2D>();
-                polyShapes[i].GetComponent<PolygonCollider2D>().Overlap(colliders);
+                polyShapes[i].GetComponent<PolygonCollider2D>().GetContacts(colliders);
+
 
                 if (colliders.Contains(polyShapes[j].GetComponent<PolygonCollider2D>()))
                 {

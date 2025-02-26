@@ -21,8 +21,9 @@ public class PositionBasedDynamics : MonoBehaviour
 
         var c2pA_world = c.eA.state.GetVecCentroid2Point(c.pointA_local);
         var c2pB_world = c.eB.state.GetVecCentroid2Point(c.pointB_local);
-        var emeA = new EffectiveMassElement(c2pA_world, c.normal, c.eA.inertia_inv, c.eA.mass_inv);
-        var emeB = new EffectiveMassElement(c2pB_world, c.normal, c.eB.inertia_inv, c.eB.mass_inv);
+
+        var emeA = c.eA.GetEffectiveMass(c2pA_world, c.normal);
+        var emeB = c.eB.GetEffectiveMass(c2pB_world, c.normal);
 
         var pAw = c.eA.Pos + c2pA_world;
         var pBw = c.eB.Pos + c2pB_world;
@@ -87,8 +88,8 @@ public class PositionBasedDynamics : MonoBehaviour
         var n = pAB.normalized;
         var d = pAB.magnitude;
 
-        var emeA = new EffectiveMassElement(pAwc-c.eA.Pos, n, c.eA.inertia_inv, c.eA.mass_inv);
-        var emeB = new EffectiveMassElement(pBwc-c.eB.Pos, n, c.eB.inertia_inv, c.eB.mass_inv);
+        var emeA = c.eA.GetEffectiveMass(pAwc-c.eA.Pos, n);
+        var emeB = c.eB.GetEffectiveMass(pBwc-c.eB.Pos, n);
 
         var alpha_tilt = PBDPositionConstraint.alpha / (h*h);
         var dlambda = (-d-alpha_tilt*c.lambda) / (emeA.w + emeB.w + alpha_tilt);       // dlambda_n > 0
@@ -109,7 +110,7 @@ public class PositionBasedDynamics : MonoBehaviour
         var n = pAB.normalized;
         var d = pAB.magnitude;
 
-        var eme = new EffectiveMassElement(pAwc-c.e.Pos, n, c.e.inertia_inv, c.e.mass_inv);
+        var eme = c.e.GetEffectiveMass(pAwc-c.e.Pos, n);
 
         var alpha_tilt = FixedPosConstraint.alpha / (h*h);
         var dlambda = (-d-alpha_tilt*c.lambda) / (eme.w + alpha_tilt);       // dlambda_n > 0
@@ -119,16 +120,16 @@ public class PositionBasedDynamics : MonoBehaviour
         var dir = n;
 
         /// 在方向n上施加大小为lambda的冲量, 旋转冲量 I*dtheta = r x P ==> dtheta = r x P / I
-        var dxA = c.e.mass_inv * lambda * dir;         // 这里的lambda*dir是对应方向的冲量向量
-        var dthetaA = eme.inertia_inv * eme.rcn * lambda;
+        var dxA = c.e.MassInv * lambda * dir;         // 这里的lambda*dir是对应方向的冲量向量
+        var dthetaA = eme.inert_inv_rcn * lambda;
         c.e.Pos += new Vector2(dxA.x, dxA.y);
         c.e.RotRad += dthetaA;
     }
 
     void SolveAngularConstraint(PBDAngularConstraint c, float h)
     {
-        float wA = c.eA.inertia_inv;
-        float wB = c.eB.inertia_inv;
+        float wA = c.eA.InertiaInv;
+        float wB = c.eB.InertiaInv;
 
         // angular difference bewteen A and B
         float cur_diff = NormalizeAngle((c.eA.RotRad - c.eB.RotRad)*Mathf.Rad2Deg);
@@ -154,12 +155,12 @@ public class PositionBasedDynamics : MonoBehaviour
     void applyConstraint(float lambda, Vector2 dir, EffectiveMassElement emeA, EffectiveMassElement emeB, RigidBodyEntry ea, RigidBodyEntry eb)
     {
         /// 在方向n上施加大小为lambda的冲量
-        var dxA = ea.mass_inv * lambda * dir;         // 这里的lambda*dir是对应方向的冲量向量
-        var dxB = -eb.mass_inv * lambda * dir;        // 这里的lambda*dir是对应方向的冲量向量
+        var dxA = ea.MassInv * lambda * dir;         // 这里的lambda*dir是对应方向的冲量向量
+        var dxB = -eb.MassInv * lambda * dir;        // 这里的lambda*dir是对应方向的冲量向量
 
         /// 在方向n上施加大小为lambda的冲量, 旋转冲量 I*dtheta = r x P ==> dtheta = r x P / I
-        var dthetaA = emeA.inertia_inv * emeA.rcn * lambda;
-        var dthetaB = -emeB.inertia_inv * emeB.rcn * lambda;
+        var dthetaA = emeA.inert_inv_rcn * lambda;
+        var dthetaB = -emeB.inert_inv_rcn * lambda;
 
         ea.Pos += new Vector2(dxA.x, dxA.y);
         ea.RotRad += dthetaA;
@@ -193,29 +194,28 @@ public class PositionBasedDynamics : MonoBehaviour
             // h * mu * (lambda_n / h^2) = mu * lambda_n / h
             // delta_v += -Math.Min(Math.Abs(fric_coeff * c.lambda_n / h), v_rel_t.magnitude) * v_rel_t.normalized;
 
-            // 碰撞恢复力，使用previous velocity
+            // 碰撞恢复力，使用previous velocity, 碰撞发生时的速度
             var vpA_old = ea.prev_state.GetVelocityAtPoint(c.pointA_local);
             var vpB_old = eb.prev_state.GetVelocityAtPoint(c.pointB_local);
             var v_rel_n_old = Vector2.Dot(vpA_old - vpB_old, c.normal);
-            delta_v += c.normal * (-v_rel_n +  Math.Min(0, -v_rel_n_old * c.eA.resistance));
-            delta_v = c.normal * (-v_rel_n);
-
-            var dv_norm = delta_v.normalized;
+            var resistance = 0.5f * (c.eA.resistance + c.eB.resistance);
+            delta_v += c.normal * (-v_rel_n +  Math.Min(0, -v_rel_n_old * resistance));
+            // delta_v = c.normal * (-v_rel_n);
 
             // 沿dv方向计算碰撞点的等效质量，以便计算质量分配
-            var emeA = new EffectiveMassElement(ea.state.GetPositionAtPoint(c.pointA_local), dv_norm, c.eA.inertia_inv, c.eA.mass_inv);
-            var emeB = new EffectiveMassElement(eb.state.GetPositionAtPoint(c.pointB_local), dv_norm, c.eB.inertia_inv, c.eB.mass_inv);
+            var emeA = ea.GetEffectiveMass(ea.state.GetPositionAtPoint(c.pointA_local), c.normal);
+            var emeB = eb.GetEffectiveMass(eb.state.GetPositionAtPoint(c.pointB_local), c.normal);
 
             // 计算冲量，并按照质量分配
             var p = delta_v / (emeA.w + emeB.w);
-            ea.Velocity += p * ea.mass_inv;
-            eb.Velocity -= p * eb.mass_inv;
-            ea.AngularVelRad += emeA.inertia_inv * emeA.rcn * p.magnitude;
-            eb.AngularVelRad -= emeB.inertia_inv * emeB.rcn * p.magnitude;
+            ea.Velocity += p * emeA.mass_inv;
+            eb.Velocity -= p * emeB.mass_inv;
+            ea.AngularVelRad += emeA.inert_inv_rcn * p.magnitude;
+            eb.AngularVelRad -= emeB.inert_inv_rcn * p.magnitude;
         }
     }
 
-    public void PhysicsUpdate(float dt = 0.005f)
+    public void PhysicsUpdate(float dt)
     {
         // substeps
         float h = dt / numSubSteps;
