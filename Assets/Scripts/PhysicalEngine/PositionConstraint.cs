@@ -4,7 +4,7 @@ using UnityEngine;
 public class PBDPositionConstraint : BaseConstraint{
     public Vector2 pointA_local;
     public Vector2 pointB_local;
-    static public float alpha = 5e-6f;
+    static public float alpha = 1e-5f;
 
     void Awake()
     {

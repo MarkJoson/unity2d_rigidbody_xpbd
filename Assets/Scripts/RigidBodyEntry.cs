@@ -3,8 +3,51 @@ using System.Collections.Generic;
 using NaughtyAttributes;
 using UnityEngine;
 
+[Serializable]
+public struct RigidBodyState {
+    public Vector2 velocity;
+    public float angular_vel_rad;
+    public Vector2 pos;
+    public float rot_rad;
 
-[System.Serializable]
+    public RigidBodyState(Vector2 velocity, float ang_vel_rad, Vector2 pos, float rot_rad)
+    {
+        this.velocity = velocity;
+        this.angular_vel_rad = ang_vel_rad;
+        this.pos = pos;
+        this.rot_rad = rot_rad;
+    }
+
+    public RigidBodyState(RigidBodyEntry entry)
+    {
+        velocity = entry.Velocity;
+        angular_vel_rad = entry.AngularVelRad;
+        pos = entry.transform.position;
+        rot_rad = entry.transform.rotation.eulerAngles.z * Mathf.Deg2Rad;
+    }
+
+    public Vector2 GetVelocityAtPoint(Vector2 pt_local)
+    {
+        var r = GetVecCentroid2Point(pt_local);
+        return velocity + new Vector2(-r.y, r.x) * angular_vel_rad;
+    }
+
+    public Vector2 GetPositionAtPoint(Vector2 pt_local)
+    {
+        var r = pt_local;
+        return pos + new Vector2(r.x * Mathf.Cos(rot_rad) - r.y * Mathf.Sin(rot_rad),
+            r.x * Mathf.Sin(rot_rad) + r.y * Mathf.Cos(rot_rad));
+    }
+
+    public Vector2 GetVecCentroid2Point(Vector2 pt_local)
+    {
+        var r = pt_local;
+        return new Vector2(r.x * Mathf.Cos(rot_rad) - r.y * Mathf.Sin(rot_rad),
+            r.x * Mathf.Sin(rot_rad) + r.y * Mathf.Cos(rot_rad));
+    }
+}
+
+
 public class RigidBodyEntry : MonoBehaviour{
     public delegate void ApplyExtForceDelegate();
     [HideInInspector]
@@ -12,25 +55,43 @@ public class RigidBodyEntry : MonoBehaviour{
     [HideInInspector]
     public float ext_angular_acc_rad;
 
-    [HideInInspector]
-    public Vector2 prev_vel;
-    [HideInInspector]
-    public float prev_ang_vel_rad;
-    [HideInInspector]
-    public Vector2 prev_pos;
-    [HideInInspector]
-    public float prev_rot_rad;
+    public RigidBodyState prev_state;
+    public RigidBodyState state;
 
-    [ReadOnly]
-    public Vector2 velocity;
-    [ReadOnly]
-    public float ang_vel_rad;
+    public Vector2 Velocity {
+        get => state.velocity;
+        set => state.velocity = value;
+    }
+    public float AngularVelRad {
+        get => state.angular_vel_rad;
+        set => state.angular_vel_rad = value;
+    }
+    public Vector2 Pos {
+        get => state.pos;
+        set {
+            state.pos = value;
+            transform.position = new Vector3(value.x, value.y, transform.position.z);
+        }
+    }
+    public float RotRad {
+        get => state.rot_rad;
+        set {
+            state.rot_rad = value;
+            transform.rotation = Quaternion.Euler(0, 0, value * Mathf.Rad2Deg);
+        }
+    }
+
+    public void Rotate(float dtheta)
+    {
+        RotRad += dtheta;
+    }
+
 
     [ReadOnly]
     public float inertia_inv;
     [ReadOnly]
     public float mass_inv;
-    public float resistence = 0.9f;
+    public float resistence = 0.5f;
     public float fric_coeff = 0.1f;
     public float intensity_inv = 1.0f;
     public bool is_static = false;
@@ -39,12 +100,15 @@ public class RigidBodyEntry : MonoBehaviour{
 
     public ApplyExtForceDelegate ApplyExtForce;
 
+    void Awake()
+    {
+        state = new RigidBodyState(Vector2.zero, 0, transform.position, transform.rotation.eulerAngles.z * Mathf.Deg2Rad);
+        prev_state = state;
+    }
+
     public void StoreLast()
     {
-        prev_vel = velocity;
-        prev_ang_vel_rad = ang_vel_rad;
-        prev_pos = transform.position;
-        prev_rot_rad = transform.rotation.eulerAngles.z * Mathf.Deg2Rad;
+        prev_state = state;
     }
 
     public void Calcinertia(List<Vector2> vertices)
@@ -85,7 +149,7 @@ public class RigidBodyEntry : MonoBehaviour{
             Vector2 next = vertices[(i + 1) % vertices.Count];
 
             float crossProduct = current.x * next.y - next.x * current.y;
-
+            // Pn∙Pn + Pn∙P{n+1} + P{n+1}∙P{n+1}
             inertia += (current.x * current.x + current.y * current.y +
                     next.x * next.x + next.y * next.y +
                     current.x * next.x + current.y * next.y) * crossProduct;
@@ -99,21 +163,7 @@ public class RigidBodyEntry : MonoBehaviour{
         inertia = inertia - mass * (centroid.x * centroid.x + centroid.y * centroid.y);
 
         // 计算质量和转动惯量的倒数（用于物理模拟）
-        float intensity_factor = 1.0f; // 你可能需要替换成实际的强度因子
-        mass_inv = intensity_factor * 1.0f / mass;
-        inertia_inv = intensity_factor * 1.0f / inertia;
-    }
-
-    public EffectiveMassElement GetEffectiveMassElement(Vector2 pt_world, Vector2 dir_n)
-    {
-        return new EffectiveMassElement(pt_world, transform.position, dir_n, inertia_inv, mass_inv);
-    }
-
-    public void ApplyImpulse(float lambda, Vector2 dir_n, Vector2 pt_world, EffectiveMassElement eme)
-    {
-        var dtheta = eme.interaia_inv * eme.rcn * lambda;
-        var dx = mass_inv * lambda * dir_n;
-        transform.position += new Vector3(dx.x, dx.y, 0);
-        transform.Rotate(new Vector3(0, 0, dtheta * Mathf.Rad2Deg));
+        mass_inv = intensity_inv * 1.0f / mass;
+        inertia_inv = intensity_inv * 1.0f / inertia;
     }
 }

@@ -15,15 +15,15 @@ public struct EffectiveMassElement {
         return v1.x * v2.y - v1.y * v2.x;
     }
 
-    public EffectiveMassElement(Vector2 relvec_world, Vector2 dir_n, float interaia_inv, float mass_inv)
+    public EffectiveMassElement(Vector2 c2p_world, Vector2 dir_n, float interaia_inv, float mass_inv)
     {
-        rcn = Cross(relvec_world, dir_n);
+        rcn = Cross(c2p_world, dir_n);
         this.interaia_inv = rcn * interaia_inv * rcn;
         w = this.interaia_inv + mass_inv;
     }
 
-    public EffectiveMassElement(
-        Vector2 pt_world, Vector2 rb_world, Vector2 dir_n, float interaia_inv, float mass_inv)
-            : this((pt_world - rb_world), dir_n, interaia_inv, mass_inv)
-        {}
+    // public EffectiveMassElement(
+    //     Vector2 pt_world, Vector2 rb_world, Vector2 dir_n, float interaia_inv, float mass_inv)
+    //         : this((pt_world - rb_world), dir_n, interaia_inv, mass_inv)
+    //     {}
 }

@@ -172,7 +172,7 @@ public class PolygonCollisionDetector : MonoBehaviour
         DrawProjection(shapeA, result.normal, 0.1f, Color.green);
         DrawProjection(shapeB, result.normal, -0.1f, Color.blue);
 
-        // Ensure normal points from A to B
+        // Ensure normal points from A to B，碰撞法向从A指向B，即对于A物体来说使碰撞加剧的方向
         Vector2 center1 = GetPolygonCenter(shapeA);
         Vector2 center2 = GetPolygonCenter(shapeB);
         if (Vector2.Dot(center2 - center1, result.normal) < 0)
@@ -247,11 +247,11 @@ public class PolygonCollisionDetector : MonoBehaviour
         List<Vector2> clippedPoints = new List<Vector2>(incidentFace);
         foreach (var plane in clipPlanes)
         {
-            clippedPoints = ClipPoints(clippedPoints, plane);
+            clippedPoints = ClipPoints(clippedPoints, plane);   //inc面上的两个点
         }
 
         // Only keep points that are behind the reference face
-        // 只保留在Reference Face的背面的点
+        // 只保留在Reference Face的背面的点，即法向量的相反方向
         Vector2 refFaceNormal = GetFaceNormal(refPoly, refFaceIndex);
         Vector2 refFacePoint = refPoly[refFaceIndex];
         // Plane2D refFacePlane = new Plane2D(refFaceNormal,
@@ -266,14 +266,14 @@ public class PolygonCollisionDetector : MonoBehaviour
             {
                 if (flipped)
                 {
-                    manifold.contactPointsOnA.Add(point + manifold.normal * dist);
-                    manifold.contactPointsOnB.Add(point);
+                    manifold.contactPointsOnA.Add(point);
+                    manifold.contactPointsOnB.Add(point + manifold.normal * dist);
                     DebugDrawLine(point, point + manifold.normal * dist, Color.white);
                 }
                 else
                 {
-                    manifold.contactPointsOnA.Add(point);
-                    manifold.contactPointsOnB.Add(point - manifold.normal * dist);
+                    manifold.contactPointsOnA.Add(point - manifold.normal * dist);
+                    manifold.contactPointsOnB.Add(point);
                     DebugDrawLine(point, point - manifold.normal * dist, Color.white);
                 }
             }
@@ -358,6 +358,7 @@ public class PolygonCollisionDetector : MonoBehaviour
         return planes;
     }
 
+    // poly按照顺时针排列，取指向多边形外的法向量
     private Vector2 GetFaceNormal(List<Vector2> poly, int faceIndex)
     {
         Vector2 p1 = poly[faceIndex];
@@ -411,36 +412,33 @@ public class PolygonCollisionDetector : MonoBehaviour
         return center / shape.Count;
     }
 
-    public List<PolygonRBEntry> polyShapes;
-    void Awake()
-    {
-        polyShapes = GetComponent<EnvironGenerator>().polyShapes;
-    }
-
-    List<Vector2> TransformPolygon(PolygonRBEntry poly)
+    List<Vector2> TransformPolygon(PolygonRBEntry polygon_entry)
     {
         var shape = new List<Vector2>();
-        foreach (var vertice in poly.Vertices)
+        foreach (var vertice in polygon_entry.Vertices)
         {
-            shape.Add(poly.transform.TransformPoint(vertice));
+            shape.Add(polygon_entry.transform.TransformPoint(vertice));
         }
         shape.Reverse();
         return shape;
     }
 
 
-    [Button("Check Collisions")]
-    public List<CollisionConstraint> CheckCollisions()
+
+    // [Button("Check Collisions")]
+    public List<CollisionConstraint> CheckCollisions(List<RigidBodyEntry> entries)
     {
         List<CollisionConstraint> constraints = new List<CollisionConstraint>();
-        //坐标变换
 
-        for (int i = 0; i < polyShapes.Count; i++)
+        var polyEntries = entries.OfType<PolygonRBEntry>().ToList();
+
+        //坐标变换
+        for (int i = 0; i < polyEntries.Count; i++)
         {
-            var shape_i = TransformPolygon(polyShapes[i]);
-            for (int j = i + 1; j < polyShapes.Count; j++)
+            var shape_i = TransformPolygon(polyEntries[i]);
+            for (int j = i + 1; j < polyEntries.Count; j++)
             {
-                var shape_j = TransformPolygon(polyShapes[j]);
+                var shape_j = TransformPolygon(polyEntries[j]);
 
                 CollisionManifold manifold = CheckCollision(shape_i, shape_j);
                 if (manifold.hasCollision)
@@ -450,9 +448,9 @@ public class PolygonCollisionDetector : MonoBehaviour
                         var constraint = new CollisionConstraint(
                             pAw: manifold.contactPointsOnA[k],
                             pBw: manifold.contactPointsOnB[k],
-                            n: manifold.normal,
-                            eA: polyShapes[i],
-                            eB: polyShapes[j]);
+                            n: manifold.normal,                    // n的方向定义为，对于A物体，使碰撞加剧的方向
+                            eA: polyEntries[i],
+                            eB: polyEntries[j]);
                         constraints.Add(constraint);
                     }
                 }

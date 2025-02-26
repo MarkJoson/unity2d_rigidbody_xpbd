@@ -100,12 +100,6 @@ public class PolygonRBEntry : RigidBodyEntry
         Vertices = vertices;
     }
 
-    void Awake()
-    {
-        prev_pos = transform.position;
-        prev_rot_rad = transform.rotation.eulerAngles.z;
-    }
-
     void Start()
     {
         if (vertices == null || vertices.Count == 0)
