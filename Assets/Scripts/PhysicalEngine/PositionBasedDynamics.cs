@@ -39,7 +39,7 @@ public class PositionBasedDynamics : MonoBehaviour
         // Debug.Log($"Collision detected with penetration depth {d}");
 
         // 分离时，d要减小，pAw*n要减小，pBw*n要增大；lambda_n < 0, 代表物体A的在n方向的位置冲量<0
-        var alpha_tilt_n = CollisionConstraint.alpha_n / (h*h);
+        var alpha_tilt_n = CollisionConstraint.alpha / (h*h);
         var dlambda_n = (-d-alpha_tilt_n*c.lambda_n) / (emeA.w + emeB.w + alpha_tilt_n);       // dlambda_n > 0
         c.lambda_n += dlambda_n;
 
@@ -48,34 +48,34 @@ public class PositionBasedDynamics : MonoBehaviour
 
         ///------ 处理静态摩擦 ------///
         // 计算上一步碰撞点的全局位置
-        // Vector2 last_pA = c.eA.prev_pos + rotateVector(c.pointA_local, c.eA.prev_rot_rad);
-        // Vector2 last_pB = c.eB.prev_pos + rotateVector(c.pointB_local, c.eB.prev_rot_rad);
-        // // 计算更新后的碰撞点全局位置
-        // Vector2 pA = (Vector2)c.eA.transform.position + rotateVector(c.pointA_local, c.eA.transform.rotation.eulerAngles.z);
-        // Vector2 pB = (Vector2)c.eB.transform.position + rotateVector(c.pointB_local, c.eB.transform.rotation.eulerAngles.z);
-        // // 计算切向向量dp_t，与方向tan_dir
-        // Vector2 dp = (pA - last_pA) - (pB - last_pB);
-        // Vector2 dp_t = dp - Dot(dp, c.normal) * c.normal;       // movement in tangent direction
-        // Vector2 tan_dir = dp_t.normalized;                      // direction in tangent direction
-        // // 重新计算tan_dir方向的刚体信息(等效质量、惯量等)
-        // emeA = new EffectiveMassElement(c.pointA_world, c.eA.transform.position, c.normal, c.eA.inertia_inv, c.eA.mass_inv);
-        // emeB = new EffectiveMassElement(c.pointB_world, c.eB.transform.position, c.normal, c.eB.inertia_inv, c.eB.mass_inv);
-        // // 重新设置d为切向位移，静态摩擦的目的是将d -> 0
-        // d = dp_t.magnitude;
+        Vector2 pA_last = c.eA.prev_state.GetPositionAtPoint(c.pointA_local);
+        Vector2 pB_last = c.eB.prev_state.GetPositionAtPoint(c.pointB_local);
+        // 计算更新后的碰撞点全局位置
+        Vector2 pA = c.eA.state.GetPositionAtPoint(c.pointA_local);
+        Vector2 pB = c.eB.state.GetPositionAtPoint(c.pointB_local);
+        // 计算切向向量dp_t，与方向tan_dir
+        Vector2 dp = (pA - pA_last) - (pB - pB_last);
+        Vector2 dp_t = dp - Vector2.Dot(dp, c.normal) * c.normal;       // relative movement in tangent direction
+        Vector2 fric_dir = dp_t.normalized;                            // movement direction in tangent direction
+        // 重新计算-tan_dir方向(摩擦力方向)的刚体信息(等效质量、惯量等)
+        emeA = c.eA.GetEffectiveMass(c2p_world:pA-c.eA.Pos, dir_n:fric_dir);
+        emeB = c.eB.GetEffectiveMass(c2p_world:pB-c.eB.Pos, dir_n:fric_dir);
 
-        // // 处理静态摩擦，使用lambda_t计算
-        // var alpha_tilt_t = CollisionConstraint.alpha_t / (h*h);
-        // var dlambda_t = (-d-c.lambda_t) / (emeA.w + emeB.w + alpha_tilt_t);
-        // // 摩擦系数取两个物体的平均值
-        // var fric_coeff = 0.5f * (c.eA.fric_coeff + c.eB.fric_coeff);
-        // //
-        // var lambda_t = Mathf.Max(0, c.lambda_t + dlambda_t);
-        // // 当累积的f_t <= mu * f_n时，应用摩擦力。这里由于lambda_t<0，所以不等式方向相反
-        // if(lambda_t > fric_coeff * c.lambda_n)
-        // {
-        //     c.lambda_t += dlambda_t;
-        //     applyConstraint(dlambda_t, -tan_dir, emeA, emeB, c.eA, c.eB);
-        // }
+        // 重新设置d为切向位移，静态摩擦的目的是将d -> 0
+        d = dp.magnitude;
+        // 处理静态摩擦，使用lambda_t计算
+        var alpha_tilt_t = CollisionConstraint.alpha / (h*h);
+        var dlambda_t = (-d-c.lambda_t) / (emeA.w + emeB.w + alpha_tilt_t);
+        // 摩擦系数取两个物体的平均值
+        var fric_coeff = 0.5f * (c.eA.static_fric + c.eB.static_fric);
+        //
+        var lambda_t = c.lambda_t + dlambda_t;//Mathf.Max(0, c.lambda_t + dlambda_t);
+        // 当累积的f_t <= mu * f_n时，应用摩擦力。这里由于lambda_t<0，所以不等式方向相反
+        if(lambda_t > fric_coeff * c.lambda_n)
+        {
+            c.lambda_t += dlambda_t;
+            applyConstraint(dlambda_t, fric_dir, emeA, emeB, c.eA, c.eB);
+        }
     }
 
 
@@ -190,9 +190,10 @@ public class PositionBasedDynamics : MonoBehaviour
             Vector2 delta_v = new Vector2();
 
             // 碰撞摩擦力
-            // var fric_coeff = 0.5f * (c.eA.fric_coeff + c.eB.fric_coeff);
+            var dyn_fric_coeff = 0.5f * (c.eA.dynamic_fric + c.eB.dynamic_fric);
             // h * mu * (lambda_n / h^2) = mu * lambda_n / h
-            // delta_v += -Math.Min(Math.Abs(fric_coeff * c.lambda_n / h), v_rel_t.magnitude) * v_rel_t.normalized;
+            float fn = c.lambda_n / h;      // 碰撞法向冲量，与正压力成正比
+            delta_v += -Math.Min(dyn_fric_coeff*Math.Abs(fn), v_rel_t.magnitude) * v_rel_t.normalized; // direction is opposite to v_rel_t
 
             // 碰撞恢复力，使用previous velocity, 碰撞发生时的速度
             var vpA_old = ea.prev_state.GetVelocityAtPoint(c.pointA_local);

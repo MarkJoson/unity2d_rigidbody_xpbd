@@ -8,8 +8,7 @@ public class CollisionConstraint{
     public Vector2 normal;      // 碰撞法线
     public float lambda_n;      // 法向碰撞
     public float lambda_t;      // 切向摩擦
-    static public float alpha_n = 0f;       // 碰撞刚度
-    static public float alpha_t = 1e-4f;       // 摩擦刚度
+    static public float alpha = 0f;       // 碰撞刚度
 
     public CollisionConstraint(Vector2 pAw, Vector2 pBw, Vector2 n, RigidBodyEntry eA, RigidBodyEntry eB)
     {

@@ -101,7 +101,8 @@ public class RigidBodyEntry : MonoBehaviour{
 
     // 物理模拟参数
     public float resistance = 1.0f;     // 恢复系数
-    public float fric_coeff = 0.1f;     // 摩擦系数
+    public float static_fric = 0.8f;    // 摩擦系数
+    public float dynamic_fric = 0.5f;   // dynamic Coulomb friction
     public float intensity_inv = 1.0f;  // 密度倒数
     public bool is_static = false;
 
@@ -179,5 +180,11 @@ public class RigidBodyEntry : MonoBehaviour{
     public EffectiveMassElement GetEffectiveMass(Vector2 c2p_world, Vector2 dir_n)
     {
         return new EffectiveMassElement(c2p_world:c2p_world, dir_n:dir_n, inertia_inv:InertiaInv, mass_inv:MassInv);
+    }
+
+    [NaughtyAttributes.Button("SetVelocityToZero")]
+    public void SetVelocityToZero()
+    {
+        state.ToStatic();
     }
 }
