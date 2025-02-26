@@ -91,7 +91,7 @@ public class RigidBodyEntry : MonoBehaviour{
     public float inertia_inv;
     [ReadOnly]
     public float mass_inv;
-    public float resistence = 0.5f;
+    public float resistance = 0.5f;
     public float fric_coeff = 0.1f;
     public float intensity_inv = 1.0f;
     public bool is_static = false;

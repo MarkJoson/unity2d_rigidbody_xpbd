@@ -29,8 +29,8 @@ public class PositionBasedDynamics : MonoBehaviour
         var dxB = -eb.mass_inv * lambda * dir;        // 这里的lambda*dir是对应方向的冲量向量
 
         // 旋转冲量 I*dtheta = r x P ==> dtheta = r x P / I
-        var dthetaA = emeA.interaia_inv * emeA.rcn * lambda;
-        var dthetaB = -emeB.interaia_inv * emeB.rcn * lambda;
+        var dthetaA = emeA.inertia_inv * emeA.rcn * lambda;
+        var dthetaB = -emeB.inertia_inv * emeB.rcn * lambda;
 
         ea.Pos += new Vector2(dxA.x, dxA.y);
         ea.RotRad += dthetaA;
@@ -135,7 +135,7 @@ public class PositionBasedDynamics : MonoBehaviour
             var vpA_old = ea.prev_state.GetVelocityAtPoint(c.pointA_local);
             var vpB_old = eb.prev_state.GetVelocityAtPoint(c.pointB_local);
             var v_rel_n_old = Dot(vpA_old - vpB_old, c.normal);
-            // delta_v += c.normal * (-v_rel_n +  Math.Min(0, -v_rel_n_old * c.eA.resistence));
+            delta_v += c.normal * (-v_rel_n +  Math.Min(0, -v_rel_n_old * c.eA.resistance));
             delta_v = c.normal * (-v_rel_n);
 
             var dv_norm = delta_v.normalized;
@@ -148,12 +148,12 @@ public class PositionBasedDynamics : MonoBehaviour
             var p = delta_v / (emeA.w + emeB.w);
             ea.Velocity += p * ea.mass_inv;
             eb.Velocity -= p * eb.mass_inv;
-            ea.AngularVelRad += emeA.interaia_inv * emeA.rcn * p.magnitude;
-            eb.AngularVelRad -= emeB.interaia_inv * emeB.rcn * p.magnitude;
+            ea.AngularVelRad += emeA.inertia_inv * emeA.rcn * p.magnitude;
+            eb.AngularVelRad -= emeB.inertia_inv * emeB.rcn * p.magnitude;
         }
     }
 
-    void SolvePositionConstriant(PBDPositionConstraint c, float h)
+    void SolvePositionConstraint(PBDPositionConstraint c, float h)
     {
 
         Vector2 pAwc = c.eA.state.GetPositionAtPoint(c.pointA_local);
@@ -180,14 +180,14 @@ public class PositionBasedDynamics : MonoBehaviour
 
         /// 在方向n上施加大小为lambda的冲量, 旋转冲量 I*dtheta = r x P ==> dtheta = r x P / I
         var dxA = c.eA.mass_inv * lambda * dir;         // 这里的lambda*dir是对应方向的冲量向量
-        var dthetaA = emeA.interaia_inv * emeA.rcn * lambda;
+        var dthetaA = emeA.inertia_inv * emeA.rcn * lambda;
         c.eA.Pos += new Vector2(dxA.x, dxA.y);
         c.eA.RotRad += dthetaA;
 
         if(c.eB!=null)
         {
             var dxB = c.eB.mass_inv * lambda * -dir;        // 这里的lambda*dir是对应方向的冲量向量
-            var dthetaB = -emeB.interaia_inv * emeB.rcn * lambda;
+            var dthetaB = -emeB.inertia_inv * emeB.rcn * lambda;
             c.eB.Pos += new Vector2(dxB.x, dxB.y);
             c.eB.RotRad += dthetaB;
         }
@@ -251,10 +251,10 @@ public class PositionBasedDynamics : MonoBehaviour
             angularConstraints.ForEach(c => c.lambda = 0);
 
             // Collsion Check in every sub step
-            List<CollisionConstraint> collisionConctrains = new List<CollisionConstraint>();
+            List<CollisionConstraint> collisionConctraints = new List<CollisionConstraint>();
             if(collisionEnabled)
             {
-                collisionConctrains = collisionDetector.CheckCollisions(entries);
+                collisionConctraints = collisionDetector.CheckCollisions(entries);
             }
 
 
@@ -263,9 +263,9 @@ public class PositionBasedDynamics : MonoBehaviour
             {
                 if(collisionEnabled)
                 {
-                    SolveCollisions(collisionConctrains, h);
+                    SolveCollisions(collisionConctraints, h);
                 }
-                posConstraints.ForEach(c => SolvePositionConstriant(c, h));
+                posConstraints.ForEach(c => SolvePositionConstraint(c, h));
                 angularConstraints.ForEach(c => SolveAngularConstraint(c, h));
             }
 
@@ -277,7 +277,7 @@ public class PositionBasedDynamics : MonoBehaviour
             }
 
             // 速度求解
-            SolveVelocities(collisionConctrains, h);
+            SolveVelocities(collisionConctraints, h);
         }
 
     }
