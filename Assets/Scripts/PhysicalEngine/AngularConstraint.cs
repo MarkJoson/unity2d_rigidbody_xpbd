@@ -1,13 +1,13 @@
 using UnityEngine;
 
 
-public class PBDAngularConstraint : BaseConstraint{
+public class PBDAngularConstraint : BinaryConstraint{
     public float theta;         // Enforced difference in Relative angle
     static public float alpha = 5e-6f;
 
     void Awake()
     {
-        if (eA == null)
+        if (eA == null || eB == null)
         {
             Debug.LogError("AngularConstraint: RigidBodyEntry not found");
             throw new System.Exception("AngularConstraint: RigidBodyEntry not found");
@@ -17,7 +17,7 @@ public class PBDAngularConstraint : BaseConstraint{
     void OnDrawGizmos()
     {
         // Draw a line between the two points
-        Gizmos.color = Color.red;
+        Gizmos.color = Color.blue;
         Gizmos.DrawLine(eA.transform.position, eB.transform.position);
 
         // draw a shape indicating the enforced angle

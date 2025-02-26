@@ -5,39 +5,15 @@ using UnityEngine.UI;
 
 public class PositionBasedDynamics : MonoBehaviour
 {
-    float Dot(Vector2 v1, Vector2 v2)
-    {
-        return v1.x * v2.x + v1.y * v2.y;
-    }
+    public PolygonCollisionDetector collisionDetector;
+    public List<RigidBodyEntry> entries = new List<RigidBodyEntry>();
+    public List<PBDPositionConstraint> posConstraints;
+    public List<PBDAngularConstraint> angularConstraints;
+    public List<FixedPosConstraint> fixedPosConstraints;
+    public int numSubSteps = 5;
+    public int numPositionIterations = 1;
+    public bool collisionEnabled = false;
 
-    float NormalizeAngle(float angle)
-    {
-        angle = (angle + 180) % 360 - 180 + ((angle + 180)<0?360:0);
-        return angle;
-    }
-
-    float NormalizeAngleRad(float angle_rad)
-    {
-        angle_rad = (angle_rad + Mathf.PI) % (2*Mathf.PI) - Mathf.PI + ((angle_rad + Mathf.PI)<0?2*Mathf.PI:0);
-        return angle_rad;
-    }
-
-    void applyConstraint(float lambda, Vector2 dir, EffectiveMassElement emeA, EffectiveMassElement emeB, RigidBodyEntry ea, RigidBodyEntry eb)
-    {
-        /// 在方向n上施加大小为lambda的冲量
-        var dxA = ea.mass_inv * lambda * dir;         // 这里的lambda*dir是对应方向的冲量向量
-        var dxB = -eb.mass_inv * lambda * dir;        // 这里的lambda*dir是对应方向的冲量向量
-
-        // 旋转冲量 I*dtheta = r x P ==> dtheta = r x P / I
-        var dthetaA = emeA.inertia_inv * emeA.rcn * lambda;
-        var dthetaB = -emeB.inertia_inv * emeB.rcn * lambda;
-
-        ea.Pos += new Vector2(dxA.x, dxA.y);
-        ea.RotRad += dthetaA;
-
-        eb.Pos += new Vector2(dxB.x, dxB.y);
-        eb.RotRad += dthetaB;
-    }
 
     void SolveCollision(CollisionConstraint c, float h)
     {
@@ -52,7 +28,7 @@ public class PositionBasedDynamics : MonoBehaviour
         var pBw = c.eB.Pos + c2pB_world;
 
         // 计算穿透深度
-        float d = Dot(pAw - pBw, c.normal);
+        float d = Vector2.Dot(pAw - pBw, c.normal);
 
         if(d <= 0) {
             // Debug.LogWarning("Collision detected but no penetration");
@@ -101,11 +77,97 @@ public class PositionBasedDynamics : MonoBehaviour
         // }
     }
 
-    void SolveCollisions(List<CollisionConstraint> constraints, float h)
+
+    void SolvePositionConstraint(PBDPositionConstraint c, float h)
     {
-        foreach(var constraint in constraints)
+        Vector2 pAwc = c.eA.state.GetPositionAtPoint(c.pA_local);
+        Vector2 pBwc = c.eB!=null ? c.eB.state.GetPositionAtPoint(c.pB_local) : c.pB_local;
+
+        var pAB = pAwc - pBwc;
+        var n = pAB.normalized;
+        var d = pAB.magnitude;
+
+        var emeA = new EffectiveMassElement(pAwc-c.eA.Pos, n, c.eA.inertia_inv, c.eA.mass_inv);
+        var emeB = new EffectiveMassElement(pBwc-c.eB.Pos, n, c.eB.inertia_inv, c.eB.mass_inv);
+
+        var alpha_tilt = PBDPositionConstraint.alpha / (h*h);
+        var dlambda = (-d-alpha_tilt*c.lambda) / (emeA.w + emeB.w + alpha_tilt);       // dlambda_n > 0
+        c.lambda += dlambda;
+
+        var lambda = c.lambda;
+        var dir = n;
+
+        applyConstraint(lambda, dir, emeA, emeB, c.eA, c.eB);
+    }
+
+    void SolveFixedPosConstraint(FixedPosConstraint c, float h)
+    {
+
+        Vector2 pAwc = c.e.state.GetPositionAtPoint(c.p_local);
+
+        var pAB = pAwc - c.point_world;
+        var n = pAB.normalized;
+        var d = pAB.magnitude;
+
+        var eme = new EffectiveMassElement(pAwc-c.e.Pos, n, c.e.inertia_inv, c.e.mass_inv);
+
+        var alpha_tilt = FixedPosConstraint.alpha / (h*h);
+        var dlambda = (-d-alpha_tilt*c.lambda) / (eme.w + alpha_tilt);       // dlambda_n > 0
+        c.lambda += dlambda;
+
+        var lambda = c.lambda;
+        var dir = n;
+
+        /// 在方向n上施加大小为lambda的冲量, 旋转冲量 I*dtheta = r x P ==> dtheta = r x P / I
+        var dxA = c.e.mass_inv * lambda * dir;         // 这里的lambda*dir是对应方向的冲量向量
+        var dthetaA = eme.inertia_inv * eme.rcn * lambda;
+        c.e.Pos += new Vector2(dxA.x, dxA.y);
+        c.e.RotRad += dthetaA;
+    }
+
+    void SolveAngularConstraint(PBDAngularConstraint c, float h)
+    {
+        float wA = c.eA.inertia_inv;
+        float wB = c.eB.inertia_inv;
+
+        // angular difference bewteen A and B
+        float cur_diff = NormalizeAngle((c.eA.RotRad - c.eB.RotRad)*Mathf.Rad2Deg);
+
+        // difference between present and expected, if > 0, A should rotate back, B should rotate forward.
+        float theta = Mathf.Deg2Rad * NormalizeAngle(c.theta - cur_diff);
+
+        float alpha_tilt = PBDAngularConstraint.alpha/(h*h);
+        float dlambda = (-theta-c.lambda * alpha_tilt) / (wA+wB+alpha_tilt);
+
+        c.lambda += dlambda;
+
+        // apply rotation
+        float dthetaA = wA * dlambda;
+        float dthetaB = -wB * dlambda;
+
+        // Debug.Log($"Θ_A:{c.eA.RotRad}, Θ_B:{c.eB.RotRad}, diff:{cur_diff}, theta:{theta}, dΘ:{dthetaB}");
+
+        c.eA.RotRad += dthetaA;
+        c.eB.RotRad += dthetaB;
+    }
+
+    void applyConstraint(float lambda, Vector2 dir, EffectiveMassElement emeA, EffectiveMassElement emeB, RigidBodyEntry ea, RigidBodyEntry eb)
+    {
+        /// 在方向n上施加大小为lambda的冲量
+        var dxA = ea.mass_inv * lambda * dir;         // 这里的lambda*dir是对应方向的冲量向量
+        var dxB = -eb.mass_inv * lambda * dir;        // 这里的lambda*dir是对应方向的冲量向量
+
+        /// 在方向n上施加大小为lambda的冲量, 旋转冲量 I*dtheta = r x P ==> dtheta = r x P / I
+        var dthetaA = emeA.inertia_inv * emeA.rcn * lambda;
+        var dthetaB = -emeB.inertia_inv * emeB.rcn * lambda;
+
+        ea.Pos += new Vector2(dxA.x, dxA.y);
+        ea.RotRad += dthetaA;
+
+        if(! eb.is_static)
         {
-            SolveCollision(constraint, h);
+            eb.Pos += new Vector2(dxB.x, dxB.y);
+            eb.RotRad += dthetaB;
         }
     }
 
@@ -121,7 +183,7 @@ public class PositionBasedDynamics : MonoBehaviour
 
             // 碰撞法向n是对A物体来说，使碰撞加剧的方向
             var v_rel = vpA - vpB;
-            var v_rel_n = Dot(v_rel, c.normal);
+            var v_rel_n = Vector2.Dot(v_rel, c.normal);
             var v_rel_t = v_rel - v_rel_n * c.normal;
 
             Vector2 delta_v = new Vector2();
@@ -134,7 +196,7 @@ public class PositionBasedDynamics : MonoBehaviour
             // 碰撞恢复力，使用previous velocity
             var vpA_old = ea.prev_state.GetVelocityAtPoint(c.pointA_local);
             var vpB_old = eb.prev_state.GetVelocityAtPoint(c.pointB_local);
-            var v_rel_n_old = Dot(vpA_old - vpB_old, c.normal);
+            var v_rel_n_old = Vector2.Dot(vpA_old - vpB_old, c.normal);
             delta_v += c.normal * (-v_rel_n +  Math.Min(0, -v_rel_n_old * c.eA.resistance));
             delta_v = c.normal * (-v_rel_n);
 
@@ -153,79 +215,6 @@ public class PositionBasedDynamics : MonoBehaviour
         }
     }
 
-    void SolvePositionConstraint(PBDPositionConstraint c, float h)
-    {
-
-        Vector2 pAwc = c.eA.state.GetPositionAtPoint(c.pointA_local);
-        Vector2 pBwc = c.eB!=null ? c.eB.state.GetPositionAtPoint(c.pointB_local) : c.pointB_local;
-
-        var pAB = pAwc - pBwc;
-
-        var n = pAB.normalized;
-        var d = pAB.magnitude;
-
-        var emeA = new EffectiveMassElement(pAwc-c.eA.Pos, n, c.eA.inertia_inv, c.eA.mass_inv);
-        var emeB = new EffectiveMassElement(
-            c.eB!=null?pBwc-c.eB.Pos:new Vector2(),
-            n,
-            c.eB!=null?c.eB.inertia_inv:0,
-            c.eB!=null?c.eB.mass_inv:0);
-
-        var alpha_tilt = PBDPositionConstraint.alpha / (h*h);
-        var dlambda = (-d-alpha_tilt*c.lambda) / (emeA.w + emeB.w + alpha_tilt);       // dlambda_n > 0
-        c.lambda += dlambda;
-
-        var lambda = c.lambda;
-        var dir = n;
-
-        /// 在方向n上施加大小为lambda的冲量, 旋转冲量 I*dtheta = r x P ==> dtheta = r x P / I
-        var dxA = c.eA.mass_inv * lambda * dir;         // 这里的lambda*dir是对应方向的冲量向量
-        var dthetaA = emeA.inertia_inv * emeA.rcn * lambda;
-        c.eA.Pos += new Vector2(dxA.x, dxA.y);
-        c.eA.RotRad += dthetaA;
-
-        if(c.eB!=null)
-        {
-            var dxB = c.eB.mass_inv * lambda * -dir;        // 这里的lambda*dir是对应方向的冲量向量
-            var dthetaB = -emeB.inertia_inv * emeB.rcn * lambda;
-            c.eB.Pos += new Vector2(dxB.x, dxB.y);
-            c.eB.RotRad += dthetaB;
-        }
-    }
-
-    void SolveAngularConstraint(PBDAngularConstraint c, float h)
-    {
-        float wA = c.eA.inertia_inv;
-        float wB = c.eB.inertia_inv;
-
-        // angular difference bewteen A and B
-        float cur_diff = NormalizeAngle(c.eA.RotRad - c.eB.RotRad);
-
-        // difference between present and expected, if > 0, A should rotate back, B should rotate forward.
-        float theta = Mathf.Deg2Rad * NormalizeAngle(c.theta - cur_diff);
-
-        float alpha_tilt = PBDAngularConstraint.alpha/(h*h);
-        float dlambda = (-theta-c.lambda * alpha_tilt) / (wA+wB+alpha_tilt);
-
-        c.lambda += dlambda;
-
-        // apply rotation
-        float dthetaA = wA * dlambda;
-        float dthetaB = -wB * dlambda;
-
-        Debug.Log($"Θ_A:{c.eA.RotRad}, Θ_B:{c.eB.RotRad}, diff:{cur_diff}, theta:{theta}, dΘ:{dthetaB}");
-
-        c.eA.RotRad += dthetaA;
-        c.eB.RotRad += dthetaB;
-    }
-
-    public PolygonCollisionDetector collisionDetector;
-    public List<RigidBodyEntry> entries = new List<RigidBodyEntry>();
-    public List<PBDPositionConstraint> posConstraints;
-    public List<PBDAngularConstraint> angularConstraints;
-    public int numSubSteps = 5;
-    public int numPositionIterations = 1;
-    public bool collisionEnabled = false;
     public void PhysicsUpdate(float dt = 0.005f)
     {
         // substeps
@@ -240,7 +229,7 @@ public class PositionBasedDynamics : MonoBehaviour
 
                 entry.ApplyExtForce?.Invoke();
 
-                entry.Velocity += (entry.ext_acc-new Vector2(0, 9.81f)) * h;
+                entry.Velocity += (entry.ext_acc + new Vector2(0, -9.81f)) * h;
                 entry.AngularVelRad += entry.ext_angular_acc_rad * h;
 
                 entry.Pos += entry.Velocity * h;
@@ -263,10 +252,11 @@ public class PositionBasedDynamics : MonoBehaviour
             {
                 if(collisionEnabled)
                 {
-                    SolveCollisions(collisionConctraints, h);
+                    collisionConctraints.ForEach(c => SolveCollision(c, h));
                 }
                 posConstraints.ForEach(c => SolvePositionConstraint(c, h));
                 angularConstraints.ForEach(c => SolveAngularConstraint(c, h));
+                fixedPosConstraints.ForEach(c => SolveFixedPosConstraint(c, h));
             }
 
             // 速度更新
@@ -277,9 +267,8 @@ public class PositionBasedDynamics : MonoBehaviour
             }
 
             // 速度求解
-            SolveVelocities(collisionConctraints, h);
+            // SolveVelocities(collisionConctraints, h);
         }
-
     }
 
     void Awake()
@@ -287,6 +276,17 @@ public class PositionBasedDynamics : MonoBehaviour
         collisionDetector = GetComponent<PolygonCollisionDetector>();
         posConstraints = new List<PBDPositionConstraint>();
         angularConstraints = new List<PBDAngularConstraint>();
+    }
+
+    void Start()
+    {
+        AddAllEntriesInScene();
+        AddAllConstraintInScene();
+    }
+
+    void FixedUpdate()
+    {
+        PhysicsUpdate(Time.fixedDeltaTime);
     }
 
     void AddAllEntriesInScene()
@@ -321,19 +321,28 @@ public class PositionBasedDynamics : MonoBehaviour
             {
                 angularConstraints.Add(angular_constraint);
             }
+
+            var fixed_pos_constraint = go.GetComponent<FixedPosConstraint>();
+            if(fixed_pos_constraint != null && fixed_pos_constraint.enabled)
+            {
+                fixedPosConstraints.Add(fixed_pos_constraint);
+            }
         }
     }
 
-    void Start()
+
+    float NormalizeAngle(float angle)
     {
-        AddAllEntriesInScene();
-        AddAllConstraintInScene();
+        angle = (angle + 180) % 360 - 180 + ((angle + 180)<0?360:0);
+        return angle;
     }
 
-    void FixedUpdate()
+    float NormalizeAngleRad(float angle_rad)
     {
-        PhysicsUpdate(Time.fixedDeltaTime);
+        angle_rad = (angle_rad + Mathf.PI) % (2*Mathf.PI) - Mathf.PI + ((angle_rad + Mathf.PI)<0?2*Mathf.PI:0);
+        return angle_rad;
     }
+
 }
 
 
