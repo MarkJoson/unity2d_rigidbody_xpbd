@@ -957,6 +957,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Square
       objectReference: {fileID: 0}
+    - target: {fileID: 6415300530794818860, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 8480394369703196763, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.size
       value: 4
@@ -1127,6 +1131,7 @@ MonoBehaviour:
   entries: []
   posConstraints: []
   angularConstraints: []
+  fixedPosConstraints: []
   numSubSteps: 5
   numPositionIterations: 1
   collisionEnabled: 1
