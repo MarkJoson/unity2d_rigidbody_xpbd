@@ -43,6 +43,12 @@ public struct RigidBodyState {
     {
         return pos + GetVecCentroid2Point(pt_local);
     }
+
+    public void ToStatic()
+    {
+        velocity = Vector2.zero;
+        angular_vel_rad = 0;
+    }
 }
 
 
@@ -94,7 +100,7 @@ public class RigidBodyEntry : MonoBehaviour{
     public float MassInv => is_static ? 0 : mass_inv;
 
     // 物理模拟参数
-    public float resistance = 0.5f;     // 恢复系数
+    public float resistance = 1.0f;     // 恢复系数
     public float fric_coeff = 0.1f;     // 摩擦系数
     public float intensity_inv = 1.0f;  // 密度倒数
     public bool is_static = false;
@@ -172,6 +178,6 @@ public class RigidBodyEntry : MonoBehaviour{
 
     public EffectiveMassElement GetEffectiveMass(Vector2 c2p_world, Vector2 dir_n)
     {
-        return new EffectiveMassElement(c2p_world, dir_n, MassInv, InertiaInv);
+        return new EffectiveMassElement(c2p_world:c2p_world, dir_n:dir_n, inertia_inv:InertiaInv, mass_inv:MassInv);
     }
 }

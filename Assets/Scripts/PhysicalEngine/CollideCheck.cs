@@ -230,7 +230,7 @@ public class CollideCheck : MonoBehaviour
         }
 
         // 解析碰撞信息，求解碰撞流形 (碰撞深度， 碰撞法线, 碰撞点1， 碰撞点2)
-        List<(float, Vector2, Vector2, Vector2)> manifolds;
+        // List<(float, Vector2, Vector2, Vector2)> manifolds;
         for(int i=0; i<collision_info.Count; i++)
         {
             var info = collision_info[i];

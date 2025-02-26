@@ -4,7 +4,7 @@ using UnityEngine;
 public class FixedPosConstraint : UnaryConstraint{
     public Vector2 p_local;
     public Vector2 point_world;
-    static public float alpha = 1e-5f;
+    static public float alpha = 1e-6f;
 
     void Awake()
     {

@@ -19,7 +19,7 @@ public class PolygonCollisionDetector : MonoBehaviour
     public float normalLength = 1f;
     public float pointSize = 0.2f;
     public float arrowSize = 0.1f;
-    public float duration = 0.1f;
+    public float duration = 0.01f;
 
     // public Text text;
 
@@ -147,8 +147,8 @@ public class PolygonCollisionDetector : MonoBehaviour
             if (projectionA[1] < projectionB[0] || projectionB[1] < projectionA[0])
             {
                 result.hasCollision = false;
-                DrawProjection(shapeA, axis, 0.5f, Color.green);  // shapeA的投影向上偏移
-                DrawProjection(shapeB, axis, -0.5f, Color.blue);  // shapeB的投影向下偏移
+                // DrawProjection(shapeA, axis, 0.5f, Color.green);  // shapeA的投影向上偏移
+                // DrawProjection(shapeB, axis, -0.5f, Color.blue);  // shapeB的投影向下偏移
                 return result;
             }
 
@@ -168,8 +168,8 @@ public class PolygonCollisionDetector : MonoBehaviour
         }
 
         // 在最小穿透深度的轴上绘制投影
-        DrawProjection(shapeA, result.normal, 0.1f, Color.green);
-        DrawProjection(shapeB, result.normal, -0.1f, Color.blue);
+        // DrawProjection(shapeA, result.normal, 0.1f, Color.green);
+        // DrawProjection(shapeB, result.normal, -0.1f, Color.blue);
 
         // Ensure normal points from A to B，碰撞法向从A指向B，即对于A物体来说使碰撞加剧的方向
         Vector2 center1 = GetPolygonCenter(shapeA);
@@ -267,43 +267,43 @@ public class PolygonCollisionDetector : MonoBehaviour
                 {
                     manifold.contactPointsOnA.Add(point);
                     manifold.contactPointsOnB.Add(point + manifold.normal * dist);
-                    DebugDrawLine(point, point + manifold.normal * dist, Color.white);
+                    // DebugDrawLine(point, point + manifold.normal * dist, Color.white);
                 }
                 else
                 {
                     manifold.contactPointsOnA.Add(point - manifold.normal * dist);
                     manifold.contactPointsOnB.Add(point);
-                    DebugDrawLine(point, point - manifold.normal * dist, Color.white);
+                    // DebugDrawLine(point, point - manifold.normal * dist, Color.white);
                 }
             }
         }
 
 
         // Debug可视化
-        var mid_point = 0.5f * (refPoly[refFaceIndex] + refPoly[(refFaceIndex + 1) % refPoly.Count]);
-        DebugDrawArrow(mid_point, mid_point + refNormal * normalLength, NORMAL_COLOR);
-        mid_point = 0.5f * (incidentFace[0] + incidentFace[1]);
-        DebugDrawArrow(mid_point, mid_point + incNormal * normalLength, NORMAL_COLOR);
+        // var mid_point = 0.5f * (refPoly[refFaceIndex] + refPoly[(refFaceIndex + 1) % refPoly.Count]);
+        // DebugDrawArrow(mid_point, mid_point + refNormal * normalLength, NORMAL_COLOR);
+        // mid_point = 0.5f * (incidentFace[0] + incidentFace[1]);
+        // DebugDrawArrow(mid_point, mid_point + incNormal * normalLength, NORMAL_COLOR);
 
-        Vector2 start = refPoly[refFaceIndex];
-        Vector2 end = refPoly[(refFaceIndex + 1) % refPoly.Count];
-        DebugDrawLine(start, end, REFERENCE_FACE_COLOR);
+        // Vector2 start = refPoly[refFaceIndex];
+        // Vector2 end = refPoly[(refFaceIndex + 1) % refPoly.Count];
+        // DebugDrawLine(start, end, REFERENCE_FACE_COLOR);
 
-        DebugDrawLine(incidentFace[0], incidentFace[1], INCIDENT_FACE_COLOR);
-        foreach (var plane in clipPlanes)
-        {
-            start = plane.normal * plane.distance;
-            end = start + plane.normal * 10;
-            DebugDrawLine(start, end, CLIPPING_PLANE_COLOR);
-        }
-        foreach (var pt in manifold.contactPointsOnA)
-        {
-            DebugDrawPoint(pt, CONTACTA_POINT_COLOR, pointSize);
-        }
-        foreach (var pt in manifold.contactPointsOnB)
-        {
-            DebugDrawPoint(pt, CONTACTB_POINT_COLOR, pointSize);
-        }
+        // DebugDrawLine(incidentFace[0], incidentFace[1], INCIDENT_FACE_COLOR);
+        // foreach (var plane in clipPlanes)
+        // {
+        //     start = plane.normal * plane.distance;
+        //     end = start + plane.normal * 10;
+        //     DebugDrawLine(start, end, CLIPPING_PLANE_COLOR);
+        // }
+        // foreach (var pt in manifold.contactPointsOnA)
+        // {
+        //     DebugDrawPoint(pt, CONTACTA_POINT_COLOR, pointSize);
+        // }
+        // foreach (var pt in manifold.contactPointsOnB)
+        // {
+        //     DebugDrawPoint(pt, CONTACTB_POINT_COLOR, pointSize);
+        // }
 
     }
 

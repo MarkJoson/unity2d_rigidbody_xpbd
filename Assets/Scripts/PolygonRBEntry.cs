@@ -70,10 +70,16 @@ public class PolygonRBEntry : RigidBodyEntry
         // 使用默认材质或确保材质正确设置
         if (renderer.sharedMaterial == null)
         {
-            // renderer.material = new Material(Shader.Find("Universal Render Pipeline/Lit"));
-            renderer.material = renderer.sharedMaterial;
+            renderer.sharedMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
+            // renderer.material = renderer.sharedMaterial;
             var random = new Color(Random.value, Random.value, Random.value, 1.0f);
-            renderer.material.color = random; // 设置一个可见的颜色
+            renderer.sharedMaterial.color = random; // 设置一个可见的颜色
+        }
+        else
+        {
+            // If you want to change the color of an existing material
+            var random = new Color(Random.value, Random.value, Random.value, 1.0f);
+            renderer.sharedMaterial.color = random;
         }
 
         var filter = GetComponent<MeshFilter>();

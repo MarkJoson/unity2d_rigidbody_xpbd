@@ -22,8 +22,8 @@ public class PositionBasedDynamics : MonoBehaviour
         var c2pA_world = c.eA.state.GetVecCentroid2Point(c.pointA_local);
         var c2pB_world = c.eB.state.GetVecCentroid2Point(c.pointB_local);
 
-        var emeA = c.eA.GetEffectiveMass(c2pA_world, c.normal);
-        var emeB = c.eB.GetEffectiveMass(c2pB_world, c.normal);
+        var emeA = c.eA.GetEffectiveMass(c2p_world:c2pA_world, dir_n:c.normal);
+        var emeB = c.eB.GetEffectiveMass(c2p_world:c2pB_world, dir_n:c.normal);
 
         var pAw = c.eA.Pos + c2pA_world;
         var pBw = c.eB.Pos + c2pB_world;
@@ -88,8 +88,8 @@ public class PositionBasedDynamics : MonoBehaviour
         var n = pAB.normalized;
         var d = pAB.magnitude;
 
-        var emeA = c.eA.GetEffectiveMass(pAwc-c.eA.Pos, n);
-        var emeB = c.eB.GetEffectiveMass(pBwc-c.eB.Pos, n);
+        var emeA = c.eA.GetEffectiveMass(c2p_world:pAwc-c.eA.Pos, dir_n:n);
+        var emeB = c.eB.GetEffectiveMass(c2p_world:pBwc-c.eB.Pos, dir_n:n);
 
         var alpha_tilt = PBDPositionConstraint.alpha / (h*h);
         var dlambda = (-d-alpha_tilt*c.lambda) / (emeA.w + emeB.w + alpha_tilt);       // dlambda_n > 0
@@ -110,7 +110,7 @@ public class PositionBasedDynamics : MonoBehaviour
         var n = pAB.normalized;
         var d = pAB.magnitude;
 
-        var eme = c.e.GetEffectiveMass(pAwc-c.e.Pos, n);
+        var eme = c.e.GetEffectiveMass(c2p_world:pAwc-c.e.Pos, dir_n:n);
 
         var alpha_tilt = FixedPosConstraint.alpha / (h*h);
         var dlambda = (-d-alpha_tilt*c.lambda) / (eme.w + alpha_tilt);       // dlambda_n > 0
@@ -198,21 +198,27 @@ public class PositionBasedDynamics : MonoBehaviour
             var vpA_old = ea.prev_state.GetVelocityAtPoint(c.pointA_local);
             var vpB_old = eb.prev_state.GetVelocityAtPoint(c.pointB_local);
             var v_rel_n_old = Vector2.Dot(vpA_old - vpB_old, c.normal);
-            var resistance = 0.5f * (c.eA.resistance + c.eB.resistance);
+            var resistance = 1f * (c.eA.resistance + c.eB.resistance);
             delta_v += c.normal * (-v_rel_n +  Math.Min(0, -v_rel_n_old * resistance));
-            // delta_v = c.normal * (-v_rel_n);
+            var dvnorm = delta_v.normalized;
 
             // 沿dv方向计算碰撞点的等效质量，以便计算质量分配
-            var emeA = ea.GetEffectiveMass(ea.state.GetPositionAtPoint(c.pointA_local), c.normal);
-            var emeB = eb.GetEffectiveMass(eb.state.GetPositionAtPoint(c.pointB_local), c.normal);
+            var emeA = ea.GetEffectiveMass(c2p_world:ea.state.GetVecCentroid2Point(c.pointA_local), dir_n:dvnorm);
+            var emeB = eb.GetEffectiveMass(c2p_world:eb.state.GetVecCentroid2Point(c.pointB_local), dir_n:dvnorm);
 
             // 计算冲量，并按照质量分配
             var p = delta_v / (emeA.w + emeB.w);
             ea.Velocity += p * emeA.mass_inv;
             eb.Velocity -= p * emeB.mass_inv;
+
             ea.AngularVelRad += emeA.inert_inv_rcn * p.magnitude;
             eb.AngularVelRad -= emeB.inert_inv_rcn * p.magnitude;
         }
+    }
+
+    static float Cross(Vector2 v1, Vector2 v2)
+    {
+        return v1.x * v2.y - v1.y * v2.x;
     }
 
     public void PhysicsUpdate(float dt)
@@ -227,6 +233,13 @@ public class PositionBasedDynamics : MonoBehaviour
                 // For each entry, store their previous state
                 entry.StoreLast();
 
+                if(entry.is_static)
+                {
+                    entry.ext_acc = Vector2.zero;
+                    entry.state.ToStatic();
+                    entry.prev_state.ToStatic();
+                    continue;
+                }
                 entry.ApplyExtForce?.Invoke();
 
                 entry.Velocity += (entry.ext_acc + new Vector2(0, -9.81f)) * h;
@@ -245,7 +258,6 @@ public class PositionBasedDynamics : MonoBehaviour
             {
                 collisionConctraints = collisionDetector.CheckCollisions(entries);
             }
-
 
             // 约束求解
             for(int j=0;j<numPositionIterations;j++)
@@ -267,7 +279,7 @@ public class PositionBasedDynamics : MonoBehaviour
             }
 
             // 速度求解
-            // SolveVelocities(collisionConctraints, h);
+            SolveVelocities(collisionConctraints, h);
         }
     }
 

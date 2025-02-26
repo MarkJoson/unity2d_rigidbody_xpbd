@@ -17,11 +17,11 @@ public struct EffectiveMassElement {
         return v1.x * v2.y - v1.y * v2.x;
     }
 
-    public EffectiveMassElement(Vector2 c2p_world, Vector2 dir_n, float interaia_inv, float mass_inv)
+    public EffectiveMassElement(Vector2 c2p_world, Vector2 dir_n, float inertia_inv, float mass_inv)
     {
         rcn = Cross(c2p_world, dir_n);
         this.mass_inv = mass_inv;
-        inert_inv_rcn = interaia_inv * rcn;     // inertia_inv = rcn * interaia_inv * rcn;
+        inert_inv_rcn = inertia_inv * rcn;     // inertia_inv = rcn * interaia_inv * rcn;
         w = mass_inv + rcn * inert_inv_rcn;
     }
 }

@@ -4,7 +4,7 @@ using UnityEngine;
 public class PBDPositionConstraint : BinaryConstraint{
     public Vector2 pA_local;
     public Vector2 pB_local;
-    static public float alpha = 1e-3f;
+    static public float alpha = 1e-5f;
 
     void Awake()
     {
