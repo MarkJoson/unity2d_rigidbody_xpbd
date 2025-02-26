@@ -136,11 +136,11 @@ PrefabInstance:
       objectReference: {fileID: 1202845805}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: mass_inv
-      value: 0.0125
+      value: 0.00625
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: is_static
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: centroid.x
@@ -156,7 +156,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: inertia_inv
-      value: 0.0000935162
+      value: 0.00001171143
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: vertices.Array.size
@@ -164,7 +164,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: vertices.Array.data[0].x
-      value: -20
+      value: -40
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: vertices.Array.data[0].y
@@ -172,7 +172,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: vertices.Array.data[1].x
-      value: 20
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: vertices.Array.data[1].y
@@ -180,7 +180,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: vertices.Array.data[2].x
-      value: 20
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: vertices.Array.data[2].y
@@ -188,7 +188,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: vertices.Array.data[3].x
-      value: -20
+      value: -40
       objectReference: {fileID: 0}
     - target: {fileID: 1481623658515929460, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: vertices.Array.data[3].y
@@ -204,7 +204,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8480394369703196763, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].x
-      value: -20
+      value: -40
       objectReference: {fileID: 0}
     - target: {fileID: 8480394369703196763, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[0].y
@@ -212,7 +212,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8480394369703196763, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].x
-      value: 20
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 8480394369703196763, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[1].y
@@ -220,7 +220,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8480394369703196763, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].x
-      value: 20
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 8480394369703196763, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[2].y
@@ -228,7 +228,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8480394369703196763, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].x
-      value: -20
+      value: -40
       objectReference: {fileID: 0}
     - target: {fileID: 8480394369703196763, guid: d925edf2819c3158bb3527de3dfbc1f5, type: 3}
       propertyPath: m_Points.m_Paths.Array.data[0].Array.data[3].y
@@ -658,7 +658,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &216272015
 Transform:
   m_ObjectHideFlags: 0
@@ -3462,8 +3462,8 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
-    - _BaseColor: {r: 0.914232, g: 0.28606096, b: 0.16843428, a: 1}
-    - _Color: {r: 0.914232, g: 0.28606093, b: 0.16843423, a: 1}
+    - _BaseColor: {r: 0.35724607, g: 0.688688, b: 0.4387403, a: 1}
+    - _Color: {r: 0.35724604, g: 0.688688, b: 0.43874028, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 1, g: 1, b: 1, a: 1}
   m_BuildTextureStacks: []
@@ -4393,7 +4393,7 @@ MonoBehaviour:
   posConstraints: []
   angularConstraints: []
   fixedPosConstraints: []
-  numSubSteps: 10
+  numSubSteps: 5
   numPositionIterations: 1
   collisionEnabled: 1
 --- !u!1 &982232612
@@ -5446,7 +5446,7 @@ Mesh:
     vertexCount: 5
     localAABB:
       m_Center: {x: 0, y: 0, z: 0}
-      m_Extent: {x: 20, y: 1, z: 0}
+      m_Extent: {x: 40, y: 1, z: 0}
   m_Shapes:
     vertices: []
     shapes: []
@@ -5525,7 +5525,7 @@ Mesh:
       format: 0
       dimension: 0
     m_DataSize: 120
-    _typelessdata: 0000a0c1000080bf000000000000000000000000000080bf0000a041000080bf000000000000000000000000000080bf0000a0410000803f000000000000000000000000000080bf0000a0c10000803f000000000000000000000000000080bf0000000000000000000000000000000000000000000080bf
+    _typelessdata: 000020c2000080bf000000000000000000000000000080bf00002042000080bf000000000000000000000000000080bf000020420000803f000000000000000000000000000080bf000020c20000803f000000000000000000000000000080bf0000000000000000000000000000000000000000000080bf
   m_CompressedMesh:
     m_Vertices:
       m_NumItems: 0
@@ -5580,7 +5580,7 @@ Mesh:
     m_UVInfo: 0
   m_LocalAABB:
     m_Center: {x: 0, y: 0, z: 0}
-    m_Extent: {x: 20, y: 1, z: 0}
+    m_Extent: {x: 40, y: 1, z: 0}
   m_MeshUsageFlags: 0
   m_CookingOptions: 30
   m_BakedConvexCollisionMesh: 
@@ -9215,7 +9215,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2067110271
 Transform:
   m_ObjectHideFlags: 0

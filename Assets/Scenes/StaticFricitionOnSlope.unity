@@ -444,9 +444,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 0
+  static_fric: 0.2
+  dynamic_fric: 0.2
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -616,9 +616,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 0
+  static_fric: 0.2
+  dynamic_fric: 0.2
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -788,9 +788,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 0
+  static_fric: 0.2
+  dynamic_fric: 0.2
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -1099,9 +1099,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 0
+  static_fric: 0.2
+  dynamic_fric: 0.2
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -1286,9 +1286,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 1
+  static_fric: 0.15
+  dynamic_fric: 0.15
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -1458,9 +1458,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 1
+  static_fric: 0.15
+  dynamic_fric: 0.15
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -1748,9 +1748,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 1
+  static_fric: 0.15
+  dynamic_fric: 0.15
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -2323,9 +2323,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 1
+  static_fric: 0.15
+  dynamic_fric: 0.15
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -2495,9 +2495,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 1
+  static_fric: 0.15
+  dynamic_fric: 0.15
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -2785,9 +2785,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 1
+  static_fric: 0.15
+  dynamic_fric: 0.15
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -3070,9 +3070,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 0
+  static_fric: 0.2
+  dynamic_fric: 0.2
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -3222,9 +3222,9 @@ MonoBehaviour:
     rot_rad: 0
   inertia_inv: 0.0234375
   mass_inv: 0.0625
-  resistance: 0.1
-  static_fric: 0.1
-  dynamic_fric: 0.1
+  resistance: 0
+  static_fric: 0.2
+  dynamic_fric: 0.2
   intensity_inv: 1
   is_static: 0
   centroid: {x: 0, y: 0}
@@ -3548,7 +3548,7 @@ MonoBehaviour:
   posConstraints: []
   angularConstraints: []
   fixedPosConstraints: []
-  numSubSteps: 10
+  numSubSteps: 5
   numPositionIterations: 1
   collisionEnabled: 1
 --- !u!114 &2136267020
