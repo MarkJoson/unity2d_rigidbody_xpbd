@@ -3,6 +3,35 @@ using System.Collections.Generic;
 using System;
 using UnityEngine.UI;
 
+public abstract class Solver
+{
+
+    public abstract void ApplyConstraint(float lambda, Vector2 dir, EffectiveMassElement emeA, EffectiveMassElement emeB, RigidBodyEntry ea, RigidBodyEntry eb);
+
+    public abstract void Solve();
+
+}
+
+/// <summary>
+/// Jaccobi并行求解
+/// </summary>
+public class JaccobiSolver : Solver
+{
+
+    public override void ApplyConstraint(float lambda, Vector2 dir, EffectiveMassElement emeA, EffectiveMassElement emeB, RigidBodyEntry ea, RigidBodyEntry eb)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override void Solve()
+    {
+        throw new NotImplementedException();
+    }
+}
+
+
+
+
 public class PositionBasedDynamics : MonoBehaviour
 {
     public PolygonCollisionDetector collisionDetector;
@@ -49,34 +78,34 @@ public class PositionBasedDynamics : MonoBehaviour
 
         ///------ 处理静态摩擦 ------///
         // 计算上一步碰撞点的全局位置
-        // Vector2 pA_last = c.eA.prev_state.GetPositionAtPoint(c.pointA_local);
-        // Vector2 pB_last = c.eB.prev_state.GetPositionAtPoint(c.pointB_local);
-        // // 计算更新后的碰撞点全局位置
-        // Vector2 pA = c.eA.state.GetPositionAtPoint(c.pointA_local);
-        // Vector2 pB = c.eB.state.GetPositionAtPoint(c.pointB_local);
-        // // 计算切向向量dp_t，与方向tan_dir
-        // Vector2 dp = (pA - pA_last) - (pB - pB_last);
-        // Vector2 dp_t = dp - Vector2.Dot(dp, c.normal) * c.normal;       // relative movement in tangent direction
-        // Vector2 fric_dir = dp_t.normalized;                            // movement direction in tangent direction
-        // // 重新计算-tan_dir方向(摩擦力方向)的刚体信息(等效质量、惯量等)
-        // emeA = c.eA.GetEffectiveMass(c2p_world:pA-c.eA.Pos, dir_n:fric_dir);
-        // emeB = c.eB.GetEffectiveMass(c2p_world:pB-c.eB.Pos, dir_n:fric_dir);
+        Vector2 pAw_prev = c.eA.prev_state.GetPositionAtPoint(c.pointA_local);
+        Vector2 pBw_prev = c.eB.prev_state.GetPositionAtPoint(c.pointB_local);
+        // 计算更新后的碰撞点全局位置
+        var pAw_after = c.eA.state.GetPositionAtPoint(c.pointA_local);
+        var pBw_after = c.eB.state.GetPositionAtPoint(c.pointB_local);
+        // 计算切向向量dp_t，与方向tan_dir
+        Vector2 dp = (pAw_after - pAw_prev) - (pBw_after - pBw_prev);
+        Vector2 dp_t = dp - Vector2.Dot(dp, c.normal) * c.normal;       // relative movement in tangent direction
 
-        // // 重新设置d为切向位移，静态摩擦的目的是将d -> 0
-        // d = dp.magnitude;
-        // // 处理静态摩擦，使用lambda_t计算
-        // var alpha_tilt_t = CollisionConstraint.alpha / (h*h);
-        // var dlambda_t = (-d-c.lambda_t) / (emeA.w + emeB.w + alpha_tilt_t);
-        // // 摩擦系数取两个物体的平均值
-        // var fric_coeff = 0.5f * (c.eA.static_fric + c.eB.static_fric);
-        // //
-        // var lambda_t = c.lambda_t + dlambda_t;//Mathf.Max(0, c.lambda_t + dlambda_t);
-        // // 当累积的f_t <= mu * f_n时，应用摩擦力。这里由于lambda_t<0，所以不等式方向相反
-        // if(lambda_t > fric_coeff * c.lambda_n)
-        // {
-        //     c.lambda_t += dlambda_t;
-        //     applyConstraint(dlambda_t, fric_dir, emeA, emeB, c.eA, c.eB);
-        // }
+        // 重新计算-tan_dir方向(摩擦力方向)的刚体信息(等效质量、惯量等)
+        emeA = c.eA.GetEffectiveMass(c2p_world:pAw_after-c.eA.Pos, dir_n:dp_t.normalized);
+        emeB = c.eB.GetEffectiveMass(c2p_world:pBw_after-c.eB.Pos, dir_n:dp_t.normalized);
+
+        // 重新设置d为切向位移，静态摩擦的目的是将d -> 0
+        d = dp.magnitude;
+        // 处理静态摩擦，使用lambda_t计算
+        var alpha_tilt_t = CollisionConstraint.alpha / (h*h);
+        var dlambda_t = (-d-c.lambda_t) / (emeA.w + emeB.w + alpha_tilt_t);
+        // 摩擦系数取两个物体的平均值
+        var fric_coeff = 0.5f * (c.eA.static_fric + c.eB.static_fric);
+        //
+        var lambda_t = c.lambda_t + dlambda_t;//Mathf.Max(0, c.lambda_t + dlambda_t);
+        // 当累积的f_t <= mu * f_n时，应用摩擦力。这里由于lambda_t<0，所以不等式方向相反
+        if(lambda_t > fric_coeff * c.lambda_n)
+        {
+            c.lambda_t += dlambda_t;
+            applyConstraint(dlambda_t, dp_t.normalized, emeA, emeB, c.eA, c.eB);
+        }
     }
 
 
@@ -185,11 +214,6 @@ public class PositionBasedDynamics : MonoBehaviour
                 continue;
             }
 
-            // 所有约束只处理一次
-            // if(c.process_times++ >= 1) {
-            //     continue;
-            // }
-
             var vpA = ea.state.GetVelocityAtPoint(c.pointA_local);
             var vpB = eb.state.GetVelocityAtPoint(c.pointB_local);
 
@@ -271,7 +295,7 @@ public class PositionBasedDynamics : MonoBehaviour
             angularConstraints.ForEach(c => c.lambda = 0);
             collisionConctraints.ForEach(c => c.lambda_n = c.lambda_t = 0);
 
-            if(collisionEnabled && i%2==0)
+            if(collisionEnabled && i%1==0)
                 collisionConctraints = collisionDetector.CheckCollisions(entries);
 
             // 约束求解
@@ -296,6 +320,14 @@ public class PositionBasedDynamics : MonoBehaviour
             // 速度求解
             // if(collisionEnabled && i<1)
             SolveVelocities(collisionConctraints, h);
+
+            // 当速度<0.01时设置为静止
+            entries.ForEach(e => {
+                if(e.Velocity.magnitude < 0.002f)
+                    e.Velocity = Vector2.zero;
+                // if(Mathf.Abs(e.AngularVelRad) < 0.01f)
+                //     e.AngularVelRad = 0;
+            });
         }
     }
 
